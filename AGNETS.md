@@ -22,6 +22,8 @@
 
 若内容出现冲突，以 `skills/arcpy-scripting/SKILL.md` 为准。
 
+需要核对 ArcPy 官方工具、参数、返回值或边界行为时，可以读取 `arcpy_docs_markdown/` 作为本地事实来源；但 `skills/` 下的技能内容不得直接引用 `arcpy_docs_markdown/` 的路径、文件名或“参考来源”说明。
+
 ## 编写规则
 
 - 内容必须强调可执行性与工程实践。
@@ -30,6 +32,7 @@
 - ArcPy 调用优先使用现代模块形式（`arcpy.management.*`、`arcpy.analysis.*`、`arcpy.da.*`）。
 - 除非用户明确要求，不要加入“代码润色/重构专用”章节。
 - 不要加入“参考来源”标注块。
+- 不要在 `skills/` 文档中写入对 `arcpy_docs_markdown/` 的显式引用；可吸收其事实内容，但技能本身应保持可独立分发。
 
 ## 更新检查清单
 
