@@ -61,7 +61,7 @@ pip install python-dotenv
 ## 四、脚本工程化
 
 - 可复用脚本工具默认使用 Python 工具箱（`.pyt`），而不是 `.tbx`、`.atbx` 或只提供普通 `.py`。
-- `.pyt` 必须同时支持 ArcGIS Pro 工具箱加载与命令行运行：提供 `Toolbox` 类、工具类、`execute()`，并保留 `main()` + `if __name__ == "__main__":` 入口。
+- `.pyt` 必须同时支持 ArcGIS Pro 工具箱加载与命令行运行：提供 `Toolbox` 类、工具类、`execute()`，并提供受保护的本地运行入口。
 - 普通一次性脚本可使用 `.py`；只要脚本意图复用、分发或作为 ArcGIS 工具运行，应优先产出 `.pyt`。
 - 参数使用 `argparse`，避免硬编码生产路径。
 - 路径建议 `pathlib.Path`，传入 ArcPy 前转 `str`。
@@ -81,9 +81,10 @@ Python 工具箱格式选择：
 - 文件命名使用 `snake_case_toolbox.pyt`；`Toolbox.alias` 使用稳定的 `snake_case`。
 - `Toolbox` 只声明 `label`、`alias`、`tools`，不得在 import 或 `Toolbox.__init__()` 阶段执行地理处理。
 - 工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`；参数用 `arcpy.Parameter` 明确类型、方向和是否必填。
-- 核心业务逻辑抽成普通函数，由 `execute()` 和 `main()` 共同调用，避免两套实现。
-- `execute()` 只读取 `parameters[i].valueAsText`、调用核心函数、写派生输出和 `messages.addMessage()`。
-- 命令行入口使用 `argparse` + `main()`；保留 `if __name__ == "__main__"`，并判断 `sys.argv[0]` 是否为当前 `.pyt`，避免 `ImportToolbox` 时误触发 CLI。
+- 工具实现默认直接写在 `Tool.execute()` 中；不要为了兼容命令行额外拆出一套平行实现。
+- `execute()` 读取 `parameters[i].valueAsText`、执行地理处理、写派生输出和 `messages.addMessage()`。
+- 命令行入口只用于本地调试和示例运行：用路径判断识别直接运行当前 `.pyt`，解析 `argparse` 参数，再用 `arcpy.ImportToolbox(__file__, alias)` 调用同一个工具完成运行。
+- ArcGIS 加载 `.pyt` 时可能触发类似 `__main__` 的执行语义；实测最小可行保护是 `Path(sys.argv[0]).resolve() == Path(__file__).resolve()` 加一个环境变量标记，避免本文件内部 `ImportToolbox` 递归触发。
 - 输出矢量数据仍遵循 `.gpkg` 默认规则；创建 GeoPackage 使用 `arcpy.management.CreateSQLiteDatabase(..., "GEOPACKAGE")`。
 - ArcGIS/ArcPy 可能生成 `*.pyt.xml` 元数据 sidecar，属于生成物，应通过 `.gitignore` 排除。
 
@@ -91,8 +92,8 @@ Python 工具箱格式选择：
 
 1. 编码声明、导入和少量常量。
 2. `Toolbox` 类和工具类。
-3. 可复用业务函数。
-4. `parse_args()`、`main()` 和受保护的 `if __name__ == "__main__"` 入口。
+3. 工具实现写在 `Tool.execute()`。
+4. 受保护的本地运行块：解析命令行参数、`ImportToolbox` 并调用工具。
 
 异常处理标准：
 
@@ -127,9 +128,9 @@ Python 工具箱格式选择：
 使用约束：
 
 - 每个示例脚本必须自包含，不依赖同目录下其他 Python 文件。
-- 示例默认可直接运行，不要求用户先准备外部输入数据（脚本内部自行构造最小示例数据）。
+- 示例应保持独立工具属性，不内置测试数据；测试所需输入由 `tests/` 代码创建。
 - 可复用工具示例默认使用 `.pyt`；普通 `.py` 示例仅用于一次性流程演示。
-- 示例应包含 `argparse`、`main()` 入口、基础异常处理，并输出关键结果路径；`.pyt` 示例还必须包含 `Toolbox` 类和至少一个工具类。
+- `.py` 示例应包含 `argparse`、`main()` 入口、基础异常处理，并输出关键结果路径；`.pyt` 示例应包含 `Toolbox` 类、至少一个工具类和受保护的命令行运行块。
 - 示例应保证可直接运行并输出可验证的结果。
 
 示例清单：
