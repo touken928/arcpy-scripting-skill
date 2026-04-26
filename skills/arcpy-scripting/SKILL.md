@@ -106,7 +106,7 @@ pip install python-dotenv
 - `examples/buffer_and_clip_features.py`：自动生成点要素和裁剪边界，执行缓冲并输出裁剪结果。
 - `examples/select_and_export_features.py`：自动生成点要素，按属性条件选择并导出结果要素类。
 - `examples/batch_project_featureclasses.py`：自动生成点/线示例要素类，批量投影到目标坐标系。
-- `examples/create_and_modify_aprx.py`：读取现有 `.aprx` 工程，检查地图/布局对象并另存为修改版工程（需预先准备输入工程）。
+- `examples/convert_vector_formats.py`：在 File GDB 中生成示例点要素，再分别导出为 Shapefile、另一 File GDB 要素类、GeoPackage、GeoJSON，并演示 Shapefile 回写 File GDB。
 
 ### 高频模块
 

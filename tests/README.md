@@ -26,7 +26,7 @@ conda install pytest numpy -y
 
 ## 运行命令
 
-- 运行 high-frequency：
+- 运行 high-frequency（项目约定的高频测试标准命令）：
 
 ```bat
 "%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/high-frequency -q

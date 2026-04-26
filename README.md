@@ -55,6 +55,14 @@ cmd /k "C:\Program Files\ArcGIS\Pro\bin\Python\Scripts\proenv.bat"
 
 ## 运行测试
 
+高频模块测试的标准命令（与 `tests/README.md`、`AGNETS.md` 一致）：
+
+```bat
+"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/high-frequency -q
+```
+
+运行全部测试（含 `tests/example`）：
+
 ```bat
 "%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests -q
 ```
