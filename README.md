@@ -26,7 +26,7 @@
 
 - `skills/arcpy-scripting/SKILL.md`：主技能规范（模型优先读取入口）
 - `skills/arcpy-scripting/modules/high-frequency/`：高频模块知识文件
-- `skills/arcpy-scripting/examples/`：自包含示例脚本（无外部输入依赖）
+- `skills/arcpy-scripting/examples/`：自包含示例 Python 工具箱（`.pyt`）；测试数据由 `tests/` 在运行时创建
 - `tests/high-frequency/`：高频模块能力测试（每模块独立）
 - `tests/example/`：示例脚本可执行性与结果校验
 
@@ -43,7 +43,7 @@
 
 - `.cursor/skills/arcpy-scripting/SKILL.md`
 - `.cursor/skills/arcpy-scripting/modules/high-frequency/*.md`
-- `.cursor/skills/arcpy-scripting/examples/*.py`
+- `.cursor/skills/arcpy-scripting/examples/*.pyt`
 
 ## 快速开始
 

@@ -15,12 +15,11 @@ EXAMPLES_DIR = REPO_ROOT / "skills" / "arcpy-scripting" / "examples"
 
 def run_example(
     script_name: str,
-    out_folder: Path,
     extra_args: Sequence[str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     script = EXAMPLES_DIR / script_name
     assert script.exists(), f"Example script not found: {script}"
-    cmd = [sys.executable, str(script), "--out-folder", str(out_folder)]
+    cmd = [sys.executable, str(script)]
     if extra_args:
         cmd.extend(extra_args)
     return subprocess.run(

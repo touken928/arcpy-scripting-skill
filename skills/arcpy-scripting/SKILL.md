@@ -58,6 +58,13 @@ pip install python-dotenv
 - 默认写新输出，不直接改原数据。
 - GeoPackage（`.gpkg`）作为现代、开放、单文件的地理信息存储格式优先推荐；用户未明确要求输出格式时，矢量结果统一输出为 `.gpkg`。
 
+### 坐标系与 GeoPackage
+
+- **矢量数据**：一般使用 **EPSG:4326（WGS 84）** 作为默认地理坐标系（分析、交换、与多数文本/JSON/WKT 场景一致时优先）。
+- **栅格与瓦片**：面向 Web 底图、切片缓存或在线叠加时，一般使用 **EPSG:3857（Web Mercator）**。
+- **GPKG 与空间参考元数据**：GeoPackage 基于 SQLite；每个 `.gpkg` 文件内包含 **`gpkg_spatial_ref_sys`** 表，用于记录该库中所引用坐标系的定义与参数（各图层通过 SRS 与之关联）。
+- **同一文件内的约定**：规范允许同一 GeoPackage 中不同图层使用不同空间参考；实际工作中为便于管理、减少重投影与协作歧义，**建议单个 `.gpkg` 内各图层保持同一坐标系**，除非用户或工作流明确要求混存多套 CRS。
+
 ## 四、脚本工程化
 
 - 可复用脚本工具默认使用 Python 工具箱（`.pyt`），而不是 `.tbx`、`.atbx` 或只提供普通 `.py`。
@@ -78,7 +85,7 @@ Python 工具箱格式选择：
 
 `.pyt` 编写要求：
 
-- 文件命名使用 `snake_case_toolbox.pyt`；`Toolbox.alias` 使用稳定的 `snake_case`。
+- 文件命名使用 `snake_case.pyt`；`Toolbox.alias` 使用稳定的 `snake_case`。
 - `Toolbox` 只声明 `label`、`alias`、`tools`，不得在 import 或 `Toolbox.__init__()` 阶段执行地理处理。
 - 工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`；参数用 `arcpy.Parameter` 明确类型、方向和是否必填。
 - 工具实现默认直接写在 `Tool.execute()` 中；不要为了兼容命令行额外拆出一套平行实现。
@@ -121,28 +128,28 @@ Python 工具箱格式选择：
 - 中频模块：暂时不支持（相关文件已下线）。
 - 低频模块：暂时不支持（相关文件已下线）。
 
-### 示例脚本（examples）
+### 示例工具箱（examples）
 
-`examples/` 目录提供可独立运行的 ArcPy 示例脚本，用于快速演示高频工作流与参数使用方式。
+`examples/` 目录提供可独立运行的 Python 工具箱（`.pyt`），用于快速演示高频工作流与参数使用方式。
 
 使用约束：
 
-- 每个示例脚本必须自包含，不依赖同目录下其他 Python 文件。
+- 每个示例文件必须自包含，不依赖同目录下其他 Python 文件。
 - 示例应保持独立工具属性，不内置测试数据；测试所需输入由 `tests/` 代码创建。
-- 可复用工具示例默认使用 `.pyt`；普通 `.py` 示例仅用于一次性流程演示。
-- `.py` 示例应包含 `argparse`、`main()` 入口、基础异常处理，并输出关键结果路径；`.pyt` 示例应包含 `Toolbox` 类、至少一个工具类和受保护的命令行运行块。
+- 示例默认使用 `.pyt`；`.pyt` 示例应包含 `Toolbox` 类、至少一个工具类、受保护的本地运行块，以及用于测试验证的最小命令行参数。
 - 示例应保证可直接运行并输出可验证的结果。
 
 示例清单：
 
-- `examples/create_workspace_and_sample_data.py`：创建输出目录与 GeoPackage，生成带属性字段的示例点要素类。
-- `examples/buffer_and_clip_features.py`：自动生成点要素和裁剪边界，执行缓冲并输出裁剪结果。
-- `examples/select_and_export_features.py`：自动生成点要素，按属性条件选择并导出结果要素类。
-- `examples/batch_project_featureclasses.py`：自动生成点/线示例要素类，批量投影到目标坐标系。
-- `examples/convert_vector_formats.py`：在 File GDB 中生成示例点要素，再分别导出为 Shapefile、另一 File GDB 要素类、GeoPackage、GeoJSON，并演示 Shapefile 回写 File GDB。
-- `examples/sample_count_features_toolbox.pyt`：创建可被 ArcGIS Pro 导入的 Python 工具箱，同时支持命令行运行并统计要素数量。
+- `examples/csv_to_geopackage.pyt`：从 CSV（`geom_type` + `WKT` 及可选属性列）写入 GeoPackage 点/线/面要素类。
+- `examples/buffer_clip.pyt`：对输入点要素缓冲并按面要素裁剪。
+- `examples/select_export.pyt`：按 SQL 条件选择要素并导出为新要素类。
+- `examples/batch_project.pyt`：将输入工作空间内的全部要素类批量投影到目标坐标系。
+- `examples/convert_vector_formats.pyt`：在 Shapefile、工作空间要素类、GeoPackage 图层、GeoJSON 等格式之间导出或复制。
 
 ### 高频模块
+
+仅当需要核对**具体工具或函数的名称、参数含义与默认值、返回值**，或确认其归属的 **`arcpy` 子模块**时，再打开下表对应 Markdown 文件。
 
 - `modules/high-frequency/arcpy-management.md`：数据集、字段、投影、复制、删除、图层构造等基础数据管理。
 - `modules/high-frequency/arcpy-analysis.md`：缓冲、裁剪、叠加、空间连接、邻近分析等矢量空间分析。
