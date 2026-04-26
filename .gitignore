@@ -25,6 +25,7 @@ htmlcov/
 *.atx
 *.spx
 *.xml~
+*.pyt.xml
 examples_output/
 **/examples_output/
 

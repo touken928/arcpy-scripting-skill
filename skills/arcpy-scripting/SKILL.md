@@ -60,10 +60,39 @@ pip install python-dotenv
 
 ## 四、脚本工程化
 
-- 入口使用 `main()` + `if __name__ == "__main__":`。
+- 可复用脚本工具默认使用 Python 工具箱（`.pyt`），而不是 `.tbx`、`.atbx` 或只提供普通 `.py`。
+- `.pyt` 必须同时支持 ArcGIS Pro 工具箱加载与命令行运行：提供 `Toolbox` 类、工具类、`execute()`，并保留 `main()` + `if __name__ == "__main__":` 入口。
+- 普通一次性脚本可使用 `.py`；只要脚本意图复用、分发或作为 ArcGIS 工具运行，应优先产出 `.pyt`。
 - 参数使用 `argparse`，避免硬编码生产路径。
 - 路径建议 `pathlib.Path`，传入 ArcPy 前转 `str`。
 - 工具输出保存为 `Result`，需要数值时显式转换（如 `int(result[0])`）。
+
+Python 工具箱格式选择：
+
+| 类型 | 本质 | 使用建议 |
+| --- | --- | --- |
+| `.pyt` | 纯 Python 定义工具箱、工具、参数与执行逻辑 | 默认推荐，适合大模型修改、代码审查、版本控制和命令行复用 |
+| `.py` | 普通 Python 脚本，无 ArcGIS 工具语义 | 仅用于一次性脚本或辅助模块 |
+| `.tbx` | 传统工具箱，格式不透明 | 不作为新工具默认交付格式 |
+| `.atbx` | ArcGIS 新一代工具箱封装包 | 适合 GUI 驱动维护，不作为 Vibe-Coding 默认格式 |
+
+`.pyt` 编写要求：
+
+- 文件命名使用 `snake_case_toolbox.pyt`；`Toolbox.alias` 使用稳定的 `snake_case`。
+- `Toolbox` 只声明 `label`、`alias`、`tools`，不得在 import 或 `Toolbox.__init__()` 阶段执行地理处理。
+- 工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`；参数用 `arcpy.Parameter` 明确类型、方向和是否必填。
+- 核心业务逻辑抽成普通函数，由 `execute()` 和 `main()` 共同调用，避免两套实现。
+- `execute()` 只读取 `parameters[i].valueAsText`、调用核心函数、写派生输出和 `messages.addMessage()`。
+- 命令行入口使用 `argparse` + `main()`；保留 `if __name__ == "__main__"`，并判断 `sys.argv[0]` 是否为当前 `.pyt`，避免 `ImportToolbox` 时误触发 CLI。
+- 输出矢量数据仍遵循 `.gpkg` 默认规则；创建 GeoPackage 使用 `arcpy.management.CreateSQLiteDatabase(..., "GEOPACKAGE")`。
+- ArcGIS/ArcPy 可能生成 `*.pyt.xml` 元数据 sidecar，属于生成物，应通过 `.gitignore` 排除。
+
+推荐 `.pyt` 文件结构：
+
+1. 编码声明、导入和少量常量。
+2. `Toolbox` 类和工具类。
+3. 可复用业务函数。
+4. `parse_args()`、`main()` 和受保护的 `if __name__ == "__main__"` 入口。
 
 异常处理标准：
 
@@ -99,7 +128,8 @@ pip install python-dotenv
 
 - 每个示例脚本必须自包含，不依赖同目录下其他 Python 文件。
 - 示例默认可直接运行，不要求用户先准备外部输入数据（脚本内部自行构造最小示例数据）。
-- 示例应包含 `argparse`、`main()` 入口、基础异常处理，并输出关键结果路径。
+- 可复用工具示例默认使用 `.pyt`；普通 `.py` 示例仅用于一次性流程演示。
+- 示例应包含 `argparse`、`main()` 入口、基础异常处理，并输出关键结果路径；`.pyt` 示例还必须包含 `Toolbox` 类和至少一个工具类。
 - 示例应保证可直接运行并输出可验证的结果。
 
 示例清单：
@@ -109,6 +139,7 @@ pip install python-dotenv
 - `examples/select_and_export_features.py`：自动生成点要素，按属性条件选择并导出结果要素类。
 - `examples/batch_project_featureclasses.py`：自动生成点/线示例要素类，批量投影到目标坐标系。
 - `examples/convert_vector_formats.py`：在 File GDB 中生成示例点要素，再分别导出为 Shapefile、另一 File GDB 要素类、GeoPackage、GeoJSON，并演示 Shapefile 回写 File GDB。
+- `examples/sample_count_features_toolbox.pyt`：创建可被 ArcGIS Pro 导入的 Python 工具箱，同时支持命令行运行并统计要素数量。
 
 ### 高频模块
 
