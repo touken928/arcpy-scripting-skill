@@ -72,3 +72,7 @@ cmd /k "C:\Program Files\ArcGIS\Pro\bin\Python\Scripts\proenv.bat"
 ```bat
 "%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests -q
 ```
+
+## 许可证
+
+本项目采用 **MIT License**，全文见仓库根目录的 [LICENSE](LICENSE)。
