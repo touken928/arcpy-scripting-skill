@@ -13,7 +13,7 @@ TOOLBOX_ALIAS = "vec_fmt"
 DIRECT_RUN_ENV = "CONVERT_VECTOR_FORMATS_PYT_DIRECT_RUN"
 
 
-class Toolbox(object):
+class Toolbox:
     def __init__(self) -> None:
         self.label = "Convert Vector Formats"
         self.alias = TOOLBOX_ALIAS
@@ -26,7 +26,7 @@ class Toolbox(object):
         ]
 
 
-class ExportShapefileTool(object):
+class ExportShapefileTool:
     def __init__(self) -> None:
         self.label = "Export To Shapefile"
         self.description = "Export input features to a shapefile."
@@ -60,7 +60,7 @@ class ExportShapefileTool(object):
         messages.addMessage(f"Shapefile: {out_shp}")
 
 
-class CopyToWorkspaceTool(object):
+class CopyToWorkspaceTool:
     def __init__(self) -> None:
         self.label = "Copy To Workspace"
         self.description = "Copy features to another workspace using FeatureClassToFeatureClass."
@@ -105,7 +105,7 @@ class CopyToWorkspaceTool(object):
         messages.addMessage(f"Copied: {out_path}")
 
 
-class ExportGeoPackageTool(object):
+class ExportGeoPackageTool:
     def __init__(self) -> None:
         self.label = "Export To GeoPackage Layer"
         self.description = "Export features into a GeoPackage feature class path."
@@ -142,7 +142,7 @@ class ExportGeoPackageTool(object):
         messages.addMessage(f"GeoPackage layer: {out_layer}")
 
 
-class ExportGeoJsonTool(object):
+class ExportGeoJsonTool:
     def __init__(self) -> None:
         self.label = "Export To GeoJSON"
         self.description = "Export features to a GeoJSON file using FeaturesToJSON."
@@ -184,7 +184,7 @@ class ExportGeoJsonTool(object):
         messages.addMessage(f"GeoJSON: {out_geojson}")
 
 
-class ShapefileToWorkspaceTool(object):
+class ShapefileToWorkspaceTool:
     def __init__(self) -> None:
         self.label = "Shapefile To Workspace"
         self.description = "Import a shapefile into a workspace as a new feature class."

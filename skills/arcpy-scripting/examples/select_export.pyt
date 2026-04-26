@@ -13,14 +13,14 @@ TOOLBOX_ALIAS = "sel_export"
 DIRECT_RUN_ENV = "SELECT_EXPORT_PYT_DIRECT_RUN"
 
 
-class Toolbox(object):
+class Toolbox:
     def __init__(self) -> None:
         self.label = "Select And Export"
         self.alias = TOOLBOX_ALIAS
         self.tools = [SelectExportTool]
 
 
-class SelectExportTool(object):
+class SelectExportTool:
     def __init__(self) -> None:
         self.label = "Select And Export"
         self.description = "Select features by attribute and export to a new feature class."

@@ -57,6 +57,7 @@ pip install python-dotenv
 - 可选参数优先关键字参数。
 - 默认写新输出，不直接改原数据。
 - GeoPackage（`.gpkg`）作为现代、开放、单文件的地理信息存储格式优先推荐；用户未明确要求输出格式时，矢量结果统一输出为 `.gpkg`。
+- 脚本中创建空 GeoPackage：`arcpy.management.CreateSQLiteDatabase(path, "GEOPACKAGE")`。
 
 ### 坐标系与 GeoPackage
 
@@ -67,46 +68,11 @@ pip install python-dotenv
 
 ## 四、脚本工程化
 
-- 可复用脚本工具默认使用 Python 工具箱（`.pyt`），而不是 `.tbx`、`.atbx` 或只提供普通 `.py`。
-- `.pyt` 必须同时支持 ArcGIS Pro 工具箱加载与命令行运行：提供 `Toolbox` 类、工具类、`execute()`，并提供受保护的本地运行入口。
-- 普通一次性脚本可使用 `.py`；只要脚本意图复用、分发或作为 ArcGIS 工具运行，应优先产出 `.pyt`。
-- 参数使用 `argparse`，避免硬编码生产路径。
-- 路径建议 `pathlib.Path`，传入 ArcPy 前转 `str`。
-- 工具输出保存为 `Result`，需要数值时显式转换（如 `int(result[0])`）。
-
-Python 工具箱格式选择：
-
-| 类型 | 本质 | 使用建议 |
-| --- | --- | --- |
-| `.pyt` | 纯 Python 定义工具箱、工具、参数与执行逻辑 | 默认推荐，适合大模型修改、代码审查、版本控制和命令行复用 |
-| `.py` | 普通 Python 脚本，无 ArcGIS 工具语义 | 仅用于一次性脚本或辅助模块 |
-| `.tbx` | 传统工具箱，格式不透明 | 不作为新工具默认交付格式 |
-| `.atbx` | ArcGIS 新一代工具箱封装包 | 适合 GUI 驱动维护，不作为 Vibe-Coding 默认格式 |
-
-`.pyt` 编写要求：
-
-- 文件命名使用 `snake_case.pyt`；`Toolbox.alias` 使用稳定的 `snake_case`。
-- `Toolbox` 只声明 `label`、`alias`、`tools`，不得在 import 或 `Toolbox.__init__()` 阶段执行地理处理。
-- 工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`；参数用 `arcpy.Parameter` 明确类型、方向和是否必填。
-- 工具实现默认直接写在 `Tool.execute()` 中；不要为了兼容命令行额外拆出一套平行实现。
-- `execute()` 读取 `parameters[i].valueAsText`、执行地理处理、写派生输出和 `messages.addMessage()`。
-- 命令行入口只用于本地调试和示例运行：用路径判断识别直接运行当前 `.pyt`，解析 `argparse` 参数，再用 `arcpy.ImportToolbox(__file__, alias)` 调用同一个工具完成运行。
-- ArcGIS 加载 `.pyt` 时可能触发类似 `__main__` 的执行语义；实测最小可行保护是 `Path(sys.argv[0]).resolve() == Path(__file__).resolve()` 加一个环境变量标记，避免本文件内部 `ImportToolbox` 递归触发。
-- 输出矢量数据仍遵循 `.gpkg` 默认规则；创建 GeoPackage 使用 `arcpy.management.CreateSQLiteDatabase(..., "GEOPACKAGE")`。
-- ArcGIS/ArcPy 可能生成 `*.pyt.xml` 元数据 sidecar，属于生成物，应通过 `.gitignore` 排除。
-
-推荐 `.pyt` 文件结构：
-
-1. 编码声明、导入和少量常量。
-2. `Toolbox` 类和工具类。
-3. 工具实现写在 `Tool.execute()`。
-4. 受保护的本地运行块：解析命令行参数、`ImportToolbox` 并调用工具。
-
-异常处理标准：
-
-- 地理处理错误：`except arcpy.ExecuteError` + `arcpy.GetMessages(2)`。
-- 其他错误：`except Exception` + traceback。
-- 扩展许可：`CheckExtension` -> `CheckOutExtension` -> `finally` 中 `CheckInExtension`。
+- **交付形态**：可复用、需分发或在 Pro 中当工具跑的脚本**默认用 `.pyt`**（`Toolbox`、工具类、`execute()`、受保护命令行块）；一次性逻辑用 `.py`。`.tbx` / `.atbx` 不作为新工具首选（不透明或偏 GUI 维护）。
+- **常规模板**：`argparse` 接参；路径用 `pathlib.Path`，传入 ArcPy 时 `str()`；地理处理结果用 `Result`，取值时显式类型转换。
+- **`.pyt` 实现**：`snake_case.pyt` 与稳定的 `snake_case` `Toolbox.alias`；`Toolbox` 只挂 `label` / `alias` / `tools`，不在 import 或 `__init__` 里跑 GP；工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`，用 `arcpy.Parameter` 描述参数；GP 与派生输出全写在 `execute()`（读 `parameters[i].valueAsText`，用 `messages.addMessage` 记录），**禁止**为命令行再写一套平行实现。类定义用 `class Toolbox:` / `class MyTool:`，**不要**写 `(object)`（Python 2 遗留，与 Pro 无关）。推荐同一文件顺序：常量区 → `Toolbox` / 工具类 → `execute()` → 受保护 CLI。
+- **CLI 与防递归**：命令行块仅作本地调试与测试；在 `Path(sys.argv[0]).resolve() == Path(__file__).resolve()` 且环境变量门闩置位后再 `ImportToolbox` 并调用工具，避免加载 `.pyt` 时自递归。矢量默认 `.gpkg` 与空库创建（`CreateSQLiteDatabase(..., "GEOPACKAGE")`）见第三节；`*.pyt.xml` 为生成物，**`.gitignore` 排除**。
+- **异常与扩展许可**：`except arcpy.ExecuteError` 配 `GetMessages(2)`；其余异常带 traceback；扩展须先 `CheckExtension` 再 `CheckOutExtension`，在 `finally` 里 `CheckInExtension`。
 
 ## 五、输出规范
 

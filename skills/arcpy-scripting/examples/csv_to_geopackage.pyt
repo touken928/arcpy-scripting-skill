@@ -74,14 +74,14 @@ def _collect_rows_by_kind(csv_path: Path) -> tuple[dict[str, list[dict[str, str]
     return by_kind, attr_fields
 
 
-class Toolbox(object):
+class Toolbox:
     def __init__(self) -> None:
         self.label = "CSV To GeoPackage"
         self.alias = TOOLBOX_ALIAS
         self.tools = [CsvToGeoPackageTool]
 
 
-class CsvToGeoPackageTool(object):
+class CsvToGeoPackageTool:
     def __init__(self) -> None:
         self.label = "CSV To GeoPackage"
         self.description = (

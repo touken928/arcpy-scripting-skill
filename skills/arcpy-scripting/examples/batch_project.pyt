@@ -13,14 +13,14 @@ TOOLBOX_ALIAS = "batch_prj"
 DIRECT_RUN_ENV = "BATCH_PROJECT_PYT_DIRECT_RUN"
 
 
-class Toolbox(object):
+class Toolbox:
     def __init__(self) -> None:
         self.label = "Batch Project"
         self.alias = TOOLBOX_ALIAS
         self.tools = [BatchProjectTool]
 
 
-class BatchProjectTool(object):
+class BatchProjectTool:
     def __init__(self) -> None:
         self.label = "Batch Project Feature Classes"
         self.description = "Project all feature classes from an input workspace to an output workspace."

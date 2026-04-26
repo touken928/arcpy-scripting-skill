@@ -13,14 +13,14 @@ TOOLBOX_ALIAS = "buf_clip"
 DIRECT_RUN_ENV = "BUFFER_CLIP_PYT_DIRECT_RUN"
 
 
-class Toolbox(object):
+class Toolbox:
     def __init__(self) -> None:
         self.label = "Buffer And Clip"
         self.alias = TOOLBOX_ALIAS
         self.tools = [BufferClipTool]
 
 
-class BufferClipTool(object):
+class BufferClipTool:
     def __init__(self) -> None:
         self.label = "Buffer And Clip"
         self.description = "Buffer input points then clip to a polygon boundary."
