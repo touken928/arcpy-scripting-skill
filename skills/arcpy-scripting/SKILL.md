@@ -44,7 +44,7 @@ pip install python-dotenv
 1. 解析参数与路径。
 2. 检查输入存在性、字段、空间参考和许可。
 3. 设置环境（`workspace`、`overwriteOutput`、`scratchWorkspace`）。
-4. 组织输出（文件夹或 `.gdb`）。
+4. 组织输出（优先 `.gpkg`；仅在工具或工作流明确需要时使用 `.gdb`）。
 5. 用 `Describe` 和列表函数决定处理分支。
 6. 执行工具链并保存 `Result`。
 7. 必要时用 `arcpy.da` 游标处理属性逻辑。
@@ -56,6 +56,7 @@ pip install python-dotenv
 - 批处理前先设 `arcpy.env.workspace` 再 `ListFeatureClasses()`。
 - 可选参数优先关键字参数。
 - 默认写新输出，不直接改原数据。
+- GeoPackage（`.gpkg`）作为现代、开放、单文件的地理信息存储格式优先推荐；用户未明确要求输出格式时，矢量结果统一输出为 `.gpkg`。
 
 ## 四、脚本工程化
 
@@ -76,6 +77,7 @@ pip install python-dotenv
 
 - 可直接运行的命令或脚本入口。
 - 输入、输出与环境假设。
+- 输出格式默认采用 `.gpkg`；如改用 Shapefile、FileGDB、GeoJSON 等格式，需说明原因或基于用户明确要求。
 - 关键 ArcPy API 选择理由。
 - 错误处理和验证方式。
 
@@ -102,7 +104,7 @@ pip install python-dotenv
 
 示例清单：
 
-- `examples/create_workspace_and_sample_data.py`：创建输出目录与 FileGDB，生成带属性字段的示例点要素类。
+- `examples/create_workspace_and_sample_data.py`：创建输出目录与 GeoPackage，生成带属性字段的示例点要素类。
 - `examples/buffer_and_clip_features.py`：自动生成点要素和裁剪边界，执行缓冲并输出裁剪结果。
 - `examples/select_and_export_features.py`：自动生成点要素，按属性条件选择并导出结果要素类。
 - `examples/batch_project_featureclasses.py`：自动生成点/线示例要素类，批量投影到目标坐标系。

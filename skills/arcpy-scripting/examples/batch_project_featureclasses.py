@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
         default=str(Path.cwd() / "examples_output"),
         help="Output parent folder path (default: ./examples_output).",
     )
-    parser.add_argument("--in-gdb-name", default="project_src_demo.gdb", help="Input gdb name.")
-    parser.add_argument("--out-gdb-name", default="project_out_demo.gdb", help="Output gdb name.")
+    parser.add_argument("--in-gpkg-name", default="project_src_demo.gpkg", help="Input GeoPackage name.")
+    parser.add_argument("--out-gpkg-name", default="project_out_demo.gpkg", help="Output GeoPackage name.")
     parser.add_argument(
         "--wkid",
         type=int,
@@ -31,23 +31,23 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def ensure_gdb(out_folder: Path, gdb_name: str) -> str:
+def ensure_geopackage(out_folder: Path, gpkg_name: str) -> str:
     out_folder.mkdir(parents=True, exist_ok=True)
-    gdb_path = out_folder / gdb_name
-    if arcpy.Exists(str(gdb_path)):
-        return str(gdb_path)
-    return arcpy.management.CreateFileGDB(str(out_folder), gdb_name)[0]
+    gpkg_path = out_folder / gpkg_name
+    if arcpy.Exists(str(gpkg_path)):
+        return str(gpkg_path)
+    return arcpy.management.CreateSQLiteDatabase(str(gpkg_path), "GEOPACKAGE")[0]
 
 
-def create_demo_featureclasses(gdb: str, wkid: int = 4326) -> None:
+def create_demo_featureclasses(workspace: str, wkid: int = 4326) -> None:
     sr = arcpy.SpatialReference(wkid)
-    points_fc = f"{gdb}/cities"
-    lines_fc = f"{gdb}/roads"
+    points_fc = f"{workspace}/cities"
+    lines_fc = f"{workspace}/roads"
 
     for fc_path, geometry in [(points_fc, "POINT"), (lines_fc, "POLYLINE")]:
         if arcpy.Exists(fc_path):
             arcpy.management.Delete(fc_path)
-        arcpy.management.CreateFeatureclass(gdb, Path(fc_path).name, geometry, spatial_reference=sr)
+        arcpy.management.CreateFeatureclass(workspace, Path(fc_path).name, geometry, spatial_reference=sr)
 
     with arcpy.da.InsertCursor(points_fc, ["SHAPE@XY"]) as cur:
         cur.insertRow(((120.10, 30.20),))
@@ -67,20 +67,22 @@ def main() -> int:
 
     try:
         out_folder = Path(args.out_folder).expanduser().resolve()
-        in_gdb = ensure_gdb(out_folder, args.in_gdb_name)
-        out_gdb = ensure_gdb(out_folder, args.out_gdb_name)
-        create_demo_featureclasses(in_gdb)
+        in_gpkg = ensure_geopackage(out_folder, args.in_gpkg_name)
+        out_gpkg = ensure_geopackage(out_folder, args.out_gpkg_name)
+        create_demo_featureclasses(in_gpkg)
 
         sr = arcpy.SpatialReference(args.wkid)
 
-        arcpy.env.workspace = in_gdb
+        arcpy.env.workspace = in_gpkg
         fcs = arcpy.ListFeatureClasses()
         if not fcs:
-            print("No feature classes found in input gdb.")
+            print("No feature classes found in input GeoPackage.")
             return 0
 
         for fc in fcs:
-            out_fc = f"{out_gdb}/{fc}{args.suffix}"
+            out_fc = f"{out_gpkg}/{fc}{args.suffix}"
+            if arcpy.Exists(out_fc):
+                arcpy.management.Delete(out_fc)
             arcpy.management.Project(fc, out_fc, sr)
             print(f"Projected: {fc} -> {out_fc}")
         return 0

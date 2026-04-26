@@ -17,6 +17,7 @@ htmlcov/
 
 # ArcPy / GIS generated data
 *.gdb/
+*.gpkg
 *.sde
 *.lock
 *.sr.lock

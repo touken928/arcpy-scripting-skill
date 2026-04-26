@@ -8,14 +8,14 @@ import arcpy
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create a FileGDB and a sample point feature class."
+        description="Create a GeoPackage and a sample point feature class."
     )
     parser.add_argument(
         "--out-folder",
         default=str(Path.cwd() / "examples_output"),
         help="Output parent folder path (default: ./examples_output).",
     )
-    parser.add_argument("--gdb-name", default="demo.gdb", help="FileGDB name.")
+    parser.add_argument("--gpkg-name", default="demo.gpkg", help="GeoPackage name.")
     parser.add_argument("--fc-name", default="sample_points", help="Output feature class name.")
     parser.add_argument(
         "--spatial-ref",
@@ -26,20 +26,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def ensure_gdb(out_folder: Path, gdb_name: str = "demo.gdb") -> str:
+def ensure_geopackage(out_folder: Path, gpkg_name: str = "demo.gpkg") -> str:
     out_folder.mkdir(parents=True, exist_ok=True)
-    gdb_path = out_folder / gdb_name
-    if arcpy.Exists(str(gdb_path)):
-        return str(gdb_path)
-    return arcpy.management.CreateFileGDB(str(out_folder), gdb_name)[0]
+    gpkg_path = out_folder / gpkg_name
+    if arcpy.Exists(str(gpkg_path)):
+        return str(gpkg_path)
+    return arcpy.management.CreateSQLiteDatabase(str(gpkg_path), "GEOPACKAGE")[0]
 
 
-def create_demo_points(gdb: str, fc_name: str = "sample_points", wkid: int = 4326) -> str:
-    out_fc = f"{gdb}/{fc_name}"
+def create_demo_points(workspace: str, fc_name: str = "sample_points", wkid: int = 4326) -> str:
+    out_fc = f"{workspace}/{fc_name}"
     if arcpy.Exists(out_fc):
         arcpy.management.Delete(out_fc)
     sr = arcpy.SpatialReference(wkid)
-    arcpy.management.CreateFeatureclass(gdb, fc_name, "POINT", spatial_reference=sr)
+    arcpy.management.CreateFeatureclass(workspace, fc_name, "POINT", spatial_reference=sr)
     arcpy.management.AddField(out_fc, "NAME", "TEXT", field_length=50)
     arcpy.management.AddField(out_fc, "VALUE", "LONG")
     rows = [
@@ -60,8 +60,8 @@ def main() -> int:
 
     try:
         out_folder = Path(args.out_folder).expanduser().resolve()
-        gdb = ensure_gdb(out_folder, args.gdb_name)
-        out_fc = create_demo_points(gdb, args.fc_name, args.spatial_ref)
+        gpkg = ensure_geopackage(out_folder, args.gpkg_name)
+        out_fc = create_demo_points(gpkg, args.fc_name, args.spatial_ref)
         print(f"Created sample data: {out_fc}")
         return 0
     except arcpy.ExecuteError:

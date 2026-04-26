@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         default=str(Path.cwd() / "examples_output"),
         help="Output parent folder path (default: ./examples_output).",
     )
-    parser.add_argument("--gdb-name", default="buffer_clip_demo.gdb", help="Output gdb name.")
+    parser.add_argument("--gpkg-name", default="buffer_clip_demo.gpkg", help="Output GeoPackage name.")
     parser.add_argument(
         "--buffer-distance",
         default="200 Meters",
@@ -24,20 +24,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def ensure_gdb(out_folder: Path, gdb_name: str = "buffer_clip_demo.gdb") -> str:
+def ensure_geopackage(out_folder: Path, gpkg_name: str = "buffer_clip_demo.gpkg") -> str:
     out_folder.mkdir(parents=True, exist_ok=True)
-    gdb_path = out_folder / gdb_name
-    if arcpy.Exists(str(gdb_path)):
-        return str(gdb_path)
-    return arcpy.management.CreateFileGDB(str(out_folder), gdb_name)[0]
+    gpkg_path = out_folder / gpkg_name
+    if arcpy.Exists(str(gpkg_path)):
+        return str(gpkg_path)
+    return arcpy.management.CreateSQLiteDatabase(str(gpkg_path), "GEOPACKAGE")[0]
 
 
-def create_demo_points(gdb: str, fc_name: str = "input_points", wkid: int = 4326) -> str:
-    out_fc = f"{gdb}/{fc_name}"
+def create_demo_points(workspace: str, fc_name: str = "input_points", wkid: int = 4326) -> str:
+    out_fc = f"{workspace}/{fc_name}"
     if arcpy.Exists(out_fc):
         arcpy.management.Delete(out_fc)
     sr = arcpy.SpatialReference(wkid)
-    arcpy.management.CreateFeatureclass(gdb, fc_name, "POINT", spatial_reference=sr)
+    arcpy.management.CreateFeatureclass(workspace, fc_name, "POINT", spatial_reference=sr)
     arcpy.management.AddField(out_fc, "NAME", "TEXT", field_length=50)
     rows = [
         ("P1", (120.10, 30.20)),
@@ -51,12 +51,12 @@ def create_demo_points(gdb: str, fc_name: str = "input_points", wkid: int = 4326
     return out_fc
 
 
-def create_demo_clip_polygon(gdb: str, fc_name: str = "clip_boundary", wkid: int = 4326) -> str:
-    out_fc = f"{gdb}/{fc_name}"
+def create_demo_clip_polygon(workspace: str, fc_name: str = "clip_boundary", wkid: int = 4326) -> str:
+    out_fc = f"{workspace}/{fc_name}"
     if arcpy.Exists(out_fc):
         arcpy.management.Delete(out_fc)
     sr = arcpy.SpatialReference(wkid)
-    arcpy.management.CreateFeatureclass(gdb, fc_name, "POLYGON", spatial_reference=sr)
+    arcpy.management.CreateFeatureclass(workspace, fc_name, "POLYGON", spatial_reference=sr)
     ring = arcpy.Array(
         [
             arcpy.Point(120.05, 30.15),
@@ -77,11 +77,11 @@ def main() -> int:
 
     try:
         out_folder = Path(args.out_folder).expanduser().resolve()
-        gdb = ensure_gdb(out_folder, args.gdb_name)
-        in_features = create_demo_points(gdb, "input_points")
-        clip_features = create_demo_clip_polygon(gdb, "clip_boundary")
-        out_buffer = f"{gdb}/buffer_result"
-        out_clip = f"{gdb}/clip_result"
+        gpkg = ensure_geopackage(out_folder, args.gpkg_name)
+        in_features = create_demo_points(gpkg, "input_points")
+        clip_features = create_demo_clip_polygon(gpkg, "clip_boundary")
+        out_buffer = f"{gpkg}/buffer_result"
+        out_clip = f"{gpkg}/clip_result"
 
         arcpy.analysis.Buffer(
             in_features,
