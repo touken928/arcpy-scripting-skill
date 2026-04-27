@@ -4,19 +4,7 @@
 
 `arcpy.ia` 用于影像分析与高级栅格处理，适合遥感指数、影像分类、分割与影像增强等自动化流程。该模块的所有函数均基于 `Raster` 对象（延迟计算），需显式调用 `.save()` 落盘。
 
-## 许可前置
-
-- 通常需要 Image Analyst 扩展许可。
-- 建议显式检查并管理 checkout/checkin：
-
-```python
-if arcpy.CheckExtension("ImageAnalyst") == "Available":
-    arcpy.CheckOutExtension("ImageAnalyst")
-else:
-    raise RuntimeError("Image Analyst license unavailable")
-```
-
-## 环境参数（建议显式固定）
+## 环境参数
 
 - `arcpy.env.cellSize`：分析像元大小。
 - `arcpy.env.extent`：分析空间范围。

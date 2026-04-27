@@ -4,20 +4,7 @@
 
 `arcpy.sa` 用于 Spatial Analyst 栅格分析建模，支持地图代数、邻域统计、成本距离、地形分析、重分类和条件分析等流程。与 `arcpy.ia` 类似，所有函数均返回 `Raster` 对象（延迟计算），需显式 `.save()` 落盘。
 
-## 许可前置
-
-- `arcpy.CheckExtension("Spatial")` 检查许可可用性。
-- `arcpy.CheckOutExtension("Spatial")` 检出扩展。
-- `finally` 块中 `arcpy.CheckInExtension("Spatial")` 归还许可。
-
-```python
-if arcpy.CheckExtension("Spatial") == "Available":
-    arcpy.CheckOutExtension("Spatial")
-else:
-    raise RuntimeError("Spatial Analyst license unavailable")
-```
-
-## 环境参数（强约束）
+## 环境参数
 
 - `arcpy.env.cellSize`：分析像元大小（未设置时默认取输入栅格最大值）。
 - `arcpy.env.extent`：分析空间范围。
@@ -478,7 +465,6 @@ out = arcpy.sa.Con(raster > threshold, raster, 0)
 
 - 忽略环境参数（`cellSize`、`extent`、`snapRaster`）导致结果不可复现。
 - 忽略 `.save()` 导致结果未持久化（内存释放后丢失）。
-- 未处理许可 checkout/checkin 导致在后台工具运行时失败。
 - 多步骤栅格运算中混用不同像元大小，导致后续统计偏差。
 - `CostDistance` 的 `source_direction` 与分析目标不匹配（如从源向外 vs 向源）。
 - `Slope` 的 `z_factor` 未根据高程单位调整（默认假设米，如数据是英尺应设为 0.3048）。
@@ -496,31 +482,25 @@ def terrain_analysis(dem_path: str, out_dir: str) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    if arcpy.CheckExtension("Spatial") == "Available":
-        arcpy.CheckOutExtension("Spatial")
+    dem = dem_path
 
-    try:
-        dem = dem_path  # Raster object or path
+    slope = arcpy.sa.Slope(dem, "DEGREE", z_factor=1.0)
+    slope.save(str(out_dir / "slope.tif"))
 
-        slope = arcpy.sa.Slope(dem, "DEGREE", z_factor=1.0)
-        slope.save(str(out_dir / "slope.tif"))
+    aspect = arcpy.sa.Aspect(dem)
+    aspect.save(str(out_dir / "aspect.tif"))
 
-        aspect = arcpy.sa.Aspect(dem)
-        aspect.save(str(out_dir / "aspect.tif"))
+    hillshade = arcpy.sa.Hillshade(dem, azimuth=315, altitude=45)
+    hillshade.save(str(out_dir / "hillshade.tif"))
 
-        hillshade = arcpy.sa.Hillshade(dem, azimuth=315, altitude=45)
-        hillshade.save(str(out_dir / "hillshade.tif"))
+    remap = arcpy.sa.RemapRange([[0, 10, 1], [10, 25, 2], [25, 90, 3]])
+    reclass = arcpy.sa.Reclassify(dem, "Value", remap)
+    reclass.save(str(out_dir / "reclass.tif"))
 
-        remap = arcpy.sa.RemapRange([[0, 10, 1], [10, 25, 2], [25, 90, 3]])
-        reclass = arcpy.sa.Reclassify(dem, "Value", remap)
-        reclass.save(str(out_dir / "reclass.tif"))
-
-        return {
-            "slope": str(out_dir / "slope.tif"),
-            "aspect": str(out_dir / "aspect.tif"),
-            "hillshade": str(out_dir / "hillshade.tif"),
-            "reclass": str(out_dir / "reclass.tif"),
-        }
-    finally:
-        arcpy.CheckInExtension("Spatial")
+    return {
+        "slope": str(out_dir / "slope.tif"),
+        "aspect": str(out_dir / "aspect.tif"),
+        "hillshade": str(out_dir / "hillshade.tif"),
+        "reclass": str(out_dir / "reclass.tif"),
+    }
 ```
