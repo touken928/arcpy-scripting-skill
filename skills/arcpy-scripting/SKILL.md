@@ -1,4 +1,4 @@
-﻿---
+---
 name: arcpy-scripting
 description: 面向 Windows + ArcGIS Pro 已安装环境的 ArcPy 本地脚本开发标准技能。用于环境管理、模块选型、常见 GIS 数据处理流程、脚本工程化与异常处理。
 ---
@@ -42,7 +42,7 @@ pip install python-dotenv
 ## 三、GIS 数据处理流程范式
 
 1. 解析参数与路径。
-2. 检查输入存在性、字段、空间参考和许可。
+2. 检查输入存在性、字段和空间参考。
 3. 设置环境（`workspace`、`overwriteOutput`、`scratchWorkspace`）。
 4. 组织输出（优先 `.gpkg`；仅在工具或工作流明确需要时使用 `.gdb`）。
 5. 用 `Describe` 和列表函数决定处理分支。
@@ -72,7 +72,7 @@ pip install python-dotenv
 - **常规模板**：`argparse` 接参；路径用 `pathlib.Path`，传入 ArcPy 时 `str()`；地理处理结果用 `Result`，取值时显式类型转换。
 - **`.pyt` 实现**：`snake_case.pyt` 与稳定的 `snake_case` `Toolbox.alias`；`Toolbox` 只挂 `label` / `alias` / `tools`，不在 import 或 `__init__` 里跑 GP；工具类提供 `label`、`description`、`getParameterInfo()`、`execute()`，用 `arcpy.Parameter` 描述参数；GP 与派生输出全写在 `execute()`（读 `parameters[i].valueAsText`，用 `messages.addMessage` 记录），**禁止**为命令行再写一套平行实现。类定义用 `class Toolbox:` / `class MyTool:`，**不要**写 `(object)`（Python 2 遗留，与 Pro 无关）。推荐同一文件顺序：常量区 → `Toolbox` / 工具类 → `execute()` → 受保护 CLI。
 - **CLI 与防递归**：命令行块仅作本地调试与测试；在 `Path(sys.argv[0]).resolve() == Path(__file__).resolve()` 且环境变量门闩置位后再 `ImportToolbox` 并调用工具，避免加载 `.pyt` 时自递归。矢量默认 `.gpkg` 与空库创建（`CreateSQLiteDatabase(..., "GEOPACKAGE")`）见第三节；`*.pyt.xml` 为生成物，**`.gitignore` 排除**。
-- **异常与扩展许可**：`except arcpy.ExecuteError` 配 `GetMessages(2)`；其余异常带 traceback；扩展须先 `CheckExtension` 再 `CheckOutExtension`，在 `finally` 里 `CheckInExtension`。
+- **异常处理**：`except arcpy.ExecuteError` 配 `GetMessages(2)`；其余异常带 traceback。
 
 ## 五、输出规范
 
@@ -117,6 +117,7 @@ pip install python-dotenv
 
 仅当需要核对**具体工具或函数的名称、参数含义与默认值、返回值**，或确认其归属的 **`arcpy` 子模块**时，再打开下表对应 Markdown 文件。
 
+- `modules/arcpy-functions.md`：ArcPy 顶层常用函数——数据描述/列举、环境管理、字段处理、几何构造、旧版游标、消息处理等。
 - `modules/arcpy-management.md`：数据集、字段、投影、复制、删除、图层构造等基础数据管理。
 - `modules/arcpy-analysis.md`：缓冲、裁剪、叠加、空间连接、邻近分析等矢量空间分析。
 - `modules/arcpy-conversion.md`：要素、表、栅格与外部格式之间的转换和导出。
