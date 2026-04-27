@@ -1,4 +1,4 @@
-# arcpy-scripting-skill
+﻿# arcpy-scripting-skill
 
 ## 项目目标
 
@@ -46,12 +46,12 @@
 ## 测试约束
 
 - 测试文档统一放在 `tests/README.md`，不在子目录重复放置 README。
-- `skills/arcpy-scripting/modules/high-frequency/` 下每篇模块文档必须对应一个独立测试文件，路径为 `tests/high-frequency/test_arcpy_*.py`。
+- `skills/arcpy-scripting/modules/` 下每篇模块文档必须对应一个独立测试文件，路径为 `tests/modules/test_arcpy_*.py`。
 - 禁止将多个高频模块合并到单一测试文件中。
 - 测试默认不依赖环境变量；在未设置任何 `ARCPY_*` 变量时必须可直接运行。
 - 涉及扩展许可（如 `arcpy.sa`、`arcpy.ia`）时，默认采用免许可可运行校验，不得因许可缺失导致测试失败或阻塞。
 - 涉及 `arcpy.mp` 时，优先自动创建临时 `.aprx`；无法创建时应回退到免依赖校验，不得直接跳过整套测试。
-- 高频测试标准运行命令为：`"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/high-frequency -q`。
+- 高频测试标准运行命令为：`"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/modules -q`。
 
 ## 命名约定
 

@@ -1,4 +1,4 @@
----
+﻿---
 name: arcpy-scripting
 description: 面向 Windows + ArcGIS Pro 已安装环境的 ArcPy 本地脚本开发标准技能。用于环境管理、模块选型、常见 GIS 数据处理流程、脚本工程化与异常处理。
 ---
@@ -117,14 +117,14 @@ pip install python-dotenv
 
 仅当需要核对**具体工具或函数的名称、参数含义与默认值、返回值**，或确认其归属的 **`arcpy` 子模块**时，再打开下表对应 Markdown 文件。
 
-- `modules/high-frequency/arcpy-management.md`：数据集、字段、投影、复制、删除、图层构造等基础数据管理。
-- `modules/high-frequency/arcpy-analysis.md`：缓冲、裁剪、叠加、空间连接、邻近分析等矢量空间分析。
-- `modules/high-frequency/arcpy-conversion.md`：要素、表、栅格与外部格式之间的转换和导出。
-- `modules/high-frequency/arcpy-da.md`：高性能游标、编辑会话、Describe 字典、NumPy/Arrow 数据互转。
-- `modules/high-frequency/arcpy-sa.md`：Spatial Analyst 栅格建模、地图代数、条件分析、邻域统计。
-- `modules/high-frequency/arcpy-ia.md`：Image Analyst 影像处理、遥感指数、分类和分割。
-- `modules/high-frequency/arcpy-mp.md`：本地 `.aprx` / `.lyrx` 工程自动化、图层更新和布局导出。
-- `modules/high-frequency/arcpy-stats.md`：空间统计、热点、离群、空间自相关、回归和核密度分析。
+- `modules/arcpy-management.md`：数据集、字段、投影、复制、删除、图层构造等基础数据管理。
+- `modules/arcpy-analysis.md`：缓冲、裁剪、叠加、空间连接、邻近分析等矢量空间分析。
+- `modules/arcpy-conversion.md`：要素、表、栅格与外部格式之间的转换和导出。
+- `modules/arcpy-da.md`：高性能游标、编辑会话、Describe 字典、NumPy/Arrow 数据互转。
+- `modules/arcpy-sa.md`：Spatial Analyst 栅格建模、地图代数、条件分析、邻域统计。
+- `modules/arcpy-ia.md`：Image Analyst 影像处理、遥感指数、分类和分割。
+- `modules/arcpy-mp.md`：本地 `.aprx` / `.lyrx` 工程自动化、图层更新和布局导出。
+- `modules/arcpy-stats.md`：空间统计、热点、离群、空间自相关、回归和核密度分析。
 
 ### 中频模块（暂不支持）
 
@@ -136,7 +136,7 @@ pip install python-dotenv
 
 使用规则：
 
-1. 回答模块问题时，仅按 `modules/high-frequency` 目录定位对应模块文件。
+1. 回答模块问题时，仅按 `modules` 目录定位对应模块文件。
 2. 高频模块作为默认推荐；中频与低频模块需明确声明“暂不支持”。
 3. 脚本生成时，按高频模块文件中的参数讲解框架展开输入/输出/关键业务参数。
 4. 跨模块流程问题，优先在高频模块范围内组合实现。

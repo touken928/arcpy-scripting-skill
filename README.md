@@ -1,4 +1,4 @@
-# arcpy-scripting-skill
+﻿# arcpy-scripting-skill
 
 `arcpy-scripting-skill` 是一个面向大模型（LLM）的 ArcPy 技能工程，用来为本地 GIS 自动化脚本生成、补全、审阅和迭代提供稳定上下文。
 
@@ -14,9 +14,9 @@
 ## 项目内容
 
 - `skills/arcpy-scripting/SKILL.md`：主技能入口，定义脚本生成规范、输出约定、示例清单和模块阅读规则。
-- `skills/arcpy-scripting/modules/high-frequency/`：高频 `arcpy` 子模块参数说明，覆盖管理、分析、转换、游标、栅格、影像、地图工程和空间统计。
+- `skills/arcpy-scripting/modules/`：高频 `arcpy` 子模块参数说明，覆盖管理、分析、转换、游标、栅格、影像、地图工程和空间统计。
 - `skills/arcpy-scripting/examples/`：自包含示例 Python 工具箱（`.pyt`），用于展示推荐脚本结构和常见工作流。
-- `tests/high-frequency/`：高频模块知识与行为测试。
+- `tests/modules/`：高频模块知识与行为测试。
 - `tests/example/`：示例工具箱的命令行运行和结果校验。
 
 当前只维护高频模块；中频与低频模块暂不提供。
@@ -33,11 +33,11 @@
 ```text
 .cursor/skills/arcpy-scripting/
 ├── SKILL.md
-├── modules/high-frequency/
+├── modules/
 └── examples/
 ```
 
-使用时，模型应优先读取 `SKILL.md`；仅当需要核对具体 ArcPy 工具、参数、返回值或模块归属时，再读取 `modules/high-frequency/` 下的对应文件。
+使用时，模型应优先读取 `SKILL.md`；仅当需要核对具体 ArcPy 工具、参数、返回值或模块归属时，再读取 `modules/` 下的对应文件。
 
 ## 运行环境
 
@@ -50,7 +50,7 @@ cmd /k "C:\Program Files\ArcGIS\Pro\bin\Python\Scripts\proenv.bat"
 直接运行脚本或测试时使用 `propy.bat`：
 
 ```bat
-"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests -q
+"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/modules -q
 ```
 
 ## 运行测试
@@ -58,7 +58,7 @@ cmd /k "C:\Program Files\ArcGIS\Pro\bin\Python\Scripts\proenv.bat"
 只运行高频模块测试：
 
 ```bat
-"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests/high-frequency -q
+"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\propy.bat" -m pytest tests -q
 ```
 
 只运行示例工具箱测试：
