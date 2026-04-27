@@ -9,27 +9,25 @@ and rewrites links that point to pages inside the downloaded dataset.
 from __future__ import annotations
 
 import argparse
-import html
 import json
 import posixpath
 import re
-import threading
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
-from urllib.parse import urldefrag, urljoin, urlparse
+from urllib.parse import urldefrag, urljoin
 from urllib.request import Request, urlopen
 
 
 DEFAULT_TOC_URL = "https://pro.arcgis.com/zh-cn/pro-app/3.6/arcpy/main/1520.js"
 DEFAULT_ALLOWED_PREFIX = "https://pro.arcgis.com/zh-cn/pro-app/3.6/arcpy/"
 DEFAULT_OUTPUT_DIR = Path("arcpy_docs_markdown")
-USER_AGENT = "Mozilla/5.0 (compatible; ArcPySidebarMarkdownCrawler/1.0)"
-PRINT_LOCK = threading.Lock()
+USER_AGENT = "Mozilla/5.0 (compatible; ArcPyDocFetcher/1.0)"
 
 
 @dataclass
@@ -65,22 +63,8 @@ class PageResult:
 class MainContentExtractor(HTMLParser):
     HEADING_TAGS = {"h2": "##", "h3": "###", "h4": "####", "h5": "#####", "h6": "######"}
     BLOCK_TAGS = {
-        "blockquote",
-        "dd",
-        "div",
-        "dl",
-        "dt",
-        "figure",
-        "figcaption",
-        "hr",
-        "ol",
-        "p",
-        "section",
-        "table",
-        "tbody",
-        "thead",
-        "tr",
-        "ul",
+        "blockquote", "dd", "div", "dl", "dt", "figure", "figcaption",
+        "hr", "ol", "p", "section", "table", "tbody", "thead", "tr", "ul",
     }
     SKIP_TAGS = {"script", "style", "noscript", "svg"}
 
@@ -207,7 +191,6 @@ class MainContentExtractor(HTMLParser):
     def markdown(self, fallback_title: str) -> str:
         title = self.title or fallback_title
         body = "".join(self.parts)
-        body = html.unescape(body)
         body = re.sub(r"[ \t]+\n", "\n", body)
         body = re.sub(r"\n{3,}", "\n\n", body)
         body = body.strip()
@@ -218,9 +201,11 @@ class MainContentExtractor(HTMLParser):
     def _paragraph_break(self) -> None:
         if not self.parts:
             return
-        tail = "".join(self.parts[-3:])
-        if not tail.endswith("\n\n"):
-            self.parts.append("\n\n")
+        if self.parts[-1].endswith("\n\n"):
+            return
+        if len(self.parts) >= 2 and self.parts[-1] == "\n" and self.parts[-2].endswith("\n"):
+            return
+        self.parts.append("\n\n")
 
     def _markdown_link(self, href: str | None) -> str | None:
         if not href:
@@ -291,23 +276,21 @@ def parse_toc_js(text: str) -> dict[str, TocNode]:
 
 
 def discover_toc(root_toc_url: str, timeout: int, retries: int) -> dict[str, TocNode]:
-    queue = [root_toc_url]
+    queue: deque[str] = deque([root_toc_url])
     seen = {root_toc_url}
     all_nodes: dict[str, TocNode] = {}
 
     while queue:
-        toc_url = queue.pop(0)
+        toc_url = queue.popleft()
         log(f"[toc] {toc_url}")
         text = fetch_text(toc_url, timeout, retries)
-        nodes = parse_toc_js(text)
-        all_nodes.update(nodes)
-        for node in nodes.values():
-            if not node.linkurl:
-                continue
-            child_url = normalize_url(urljoin(toc_url, node.linkurl))
-            if child_url not in seen:
-                seen.add(child_url)
-                queue.append(child_url)
+        for node_id, node in parse_toc_js(text).items():
+            all_nodes[node_id] = node
+            if node.linkurl:
+                child_url = normalize_url(urljoin(toc_url, node.linkurl))
+                if child_url not in seen:
+                    seen.add(child_url)
+                    queue.append(child_url)
 
     return all_nodes
 
@@ -373,7 +356,7 @@ def download_page(job: PageJob, link_map: dict[str, Path], timeout: int, retries
             source_path=job.toc_path,
             ok=True,
         )
-    except Exception as exc:  # noqa: BLE001 - collect failures and continue.
+    except Exception as exc:  # noqa: BLE001
         log(f"[failed {job.order}] {job.url}: {type(exc).__name__}: {exc}")
         return PageResult(
             url=job.url,
@@ -399,30 +382,29 @@ def write_indexes(output_dir: Path, jobs: list[PageJob], results: list[PageResul
     (output_dir / "SUMMARY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     manifest = {
-        "page_count": sum(1 for result in results if result.ok),
-        "failed_count": sum(1 for result in results if not result.ok),
+        "page_count": sum(1 for r in results if r.ok),
+        "failed_count": sum(1 for r in results if not r.ok),
         "pages": [
             {
-                "url": result.url,
-                "title": result.title,
-                "path": str(Path(result.output_path).relative_to(output_dir)),
-                "toc_path": list(result.source_path),
+                "url": r.url,
+                "title": r.title,
+                "path": str(Path(r.output_path).relative_to(output_dir)),
+                "toc_path": list(r.source_path),
             }
-            for result in results
-            if result.ok
+            for r in results
+            if r.ok
         ],
         "failed": [
-            {"url": result.url, "title": result.title, "error": result.error}
-            for result in results
-            if not result.ok
+            {"url": r.url, "title": r.title, "error": r.error}
+            for r in results
+            if not r.ok
         ],
     }
     (output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def log(message: str) -> None:
-    with PRINT_LOCK:
-        print(message, flush=True)
+    print(message, flush=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -450,15 +432,14 @@ def main() -> None:
     link_map = {job.url: job.output_path for job in jobs}
     log(f"Discovered {len(jobs)} pages. Downloading with {args.workers} workers.")
 
-    results: list[PageResult] = []
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
-        futures = [executor.submit(download_page, job, link_map, args.timeout, args.retries) for job in jobs]
-        for future in as_completed(futures):
-            results.append(future.result())
+        future_to_job = {executor.submit(download_page, job, link_map, args.timeout, args.retries): job for job in jobs}
+        pairs = [(future_to_job[future], future.result()) for future in as_completed(future_to_job)]
+        pairs.sort(key=lambda pair: pair[0].order)
+        results = [result for _job, result in pairs]
 
-    results.sort(key=lambda result: next((job.order for job in jobs if job.url == result.url), 0))
     write_indexes(output_dir, jobs, results)
-    ok_count = sum(1 for result in results if result.ok)
+    ok_count = sum(1 for r in results if r.ok)
     failed_count = len(results) - ok_count
     log(f"Done. Saved {ok_count} pages to {output_dir}. Failed: {failed_count}")
 

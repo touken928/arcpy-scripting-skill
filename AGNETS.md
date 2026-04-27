@@ -1,4 +1,4 @@
-﻿# arcpy-scripting-skill
+# arcpy-scripting-skill
 
 ## 项目目标
 
@@ -18,7 +18,7 @@
 
 - 主技能文件：`skills/arcpy-scripting/SKILL.md`
 - 本地 ArcPy 文档数据集：`arcpy_docs_markdown/`
-- 文档抓取脚本：`scripts/crawl_arcpy_sidebar.py`
+- 文档抓取脚本：`scripts/fetch_arcpy_docs.py`
 
 若内容出现冲突，以 `skills/arcpy-scripting/SKILL.md` 为准。
 
