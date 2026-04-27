@@ -2,43 +2,36 @@
 
 ## 模块定位
 
-`arcpy.stats` 对应 ArcGIS Pro 的空间统计与常规统计工具箱，用于热点分析、离群识别、空间自相关、核密度估计、回归建模和多变量分析。所有工具均返回 `arcpy.Result`。
+`arcpy.stats` 对应 ArcGIS Pro 的空间统计与常规统计工具箱，用于热点分析、离群识别、空间自相关、回归建模和多变量分析。`arcpy.stats` 工具通常返回 `arcpy.Result`；密度分析通常使用 `arcpy.sa`，返回栅格对象（可用 `.save(...)` 落盘）。
 
 ## 高频工具清单
 
 ### 空间格局分析
 
-- `HotSpots`（ Anselin Local Moran's I）
-- `ClusterOutlierAnalysis`（聚类/离群分析，LISA）
+- `HotSpots`（Getis-Ord Gi* 热点分析）
+- `ClustersOutliers`（聚类/离群分析，Anselin Local Moran's I）
 - `SpatialAutocorrelation`（全局 Moran's I）
 - `AverageNearestNeighbor`（最近邻指数）
-- `SpatialQuick鸦`（见下方）
-- `HighHighClustering` / `LowLowClustering`
+- `HighLowClustering`
 
 ### 分布分析
 
-- `KernelDensity`
-- `PointDensity`
-- `LineDensity`
-- `CalculateDensity`
+- 密度分析建议使用 `arcpy.sa`：`KernelDensity` / `PointDensity` / `LineDensity`
 
 ### 回归分析
 
 - `OrdinaryLeastSquares`（OLS）
 - `GeographicallyWeightedRegression`（GWR）
-- `ExploreTrends`（趋势探索）
+- `ExploratoryRegression`（探索回归）
 
 ### 多变量分析
 
-- `PrincipleComponentsAnalysis`（主成分分析）
-- `DiscriminantAnalysis`（判别分析）
 - `MultivariateClustering`（多变量聚类）
 - `GroupingAnalysis`（分组分析）
 
 ### Utility / 数据准备
 
 - `ExportXYv`（将要素类转为 CSV/ASCII）
-- `CountRenderer`（计数渲染）
 
 ## 工具 1：`HotSpots`（热点分析）
 
@@ -59,12 +52,10 @@
 ### 返回值
 
 - 返回 `arcpy.Result`，`result[0]` 为输出要素路径。
-- 输出要素属性包括 `GiZScore`（Z 得分）、`GiPValue`（P 值）、`GiCluster`（聚类类型：
-  - `1`：高-高（热点）
-  - `2`：低-低（冷点）
-  - `3`：高-低（离群）
-  - `4`：低-高（离群）
-  - `0`：无统计显著性）。
+- 输出要素属性包括 `GiZScore`（Z 得分）和 `GiPValue`（P 值）。
+- 聚类分级字段在不同版本可能是 `GiCluster` 或 `Gi_Bin`：
+  - `GiCluster` 常见取值：`0..4`
+  - `Gi_Bin` 常见取值：`-3..3`（负值代表冷点，正值代表热点）
 
 ### 示例
 
@@ -79,19 +70,17 @@ out_fc = result[0]
 print(result.getMessages())
 ```
 
-## 工具 2：`ClusterOutlierAnalysis`（聚类与离群分析）
+## 工具 2：`ClustersOutliers`（聚类与离群分析）
 
 ### 参数
 
 - 与 `HotSpots` 基本一致。
-- `distance_band_or_threshold_distance`：同上（关键参数）。
-- `conceptualization_of_spatial_relationships`：同上。
-- `out_weight_matrix_file`（可选）：输出权重矩阵文件。
+- 常用参数与 `HotSpots` 一致。
 
 ### 返回值
 
 - 返回 `arcpy.Result`。
-- 输出要素属性：`COType`（1=HH, 2=LL, 3=HL, 4=LH, 0=无显著）、`LZiScore`、`LPValue`。
+- 输出要素属性：`COType`（1=HH, 2=LL, 3=HL, 4=LH, 0=无显著）、`LMiZScore`、`LMiPValue`。
 
 ## 工具 3：`SpatialAutocorrelation`（全局空间自相关）
 
@@ -131,7 +120,7 @@ for msg in result.getMessages():
 ### 参数
 
 - `in_features`：输入要素。
-- `distance_method`（可选）：`EUCLIDEAN`（欧氏）/ `MANHATTAN`（曼哈顿）。
+- `distance_method`（可选）：`EUCLIDEAN_DISTANCE`（欧氏）/ `MANHATTAN_DISTANCE`（曼哈顿）。
 - `generate_report`（可选）：`GENERATE_REPORT`（输出 PDF）。
 - `area`（可选）：区域面积值（用于计算密度）。
 
@@ -140,7 +129,7 @@ for msg in result.getMessages():
 - 返回 `arcpy.Result`。
 - 消息输出：ANN 比率、z-score、p-value、平均观测距离、预期平均距离。
 
-## 工具 5：`KernelDensity`
+## 工具 5：`KernelDensity`（`arcpy.sa`）
 
 ### 参数
 
@@ -153,39 +142,26 @@ for msg in result.getMessages():
 
 ### 返回值
 
-- 返回 `arcpy.Result`，`result[0]` 为输出栅格路径。
+- 返回栅格对象（`Raster`），不是 `arcpy.Result`。
+- 需要通过 `.save(output_path)` 写出结果栅格。
 
 ### 示例
 
 ```python
-result = arcpy.stats.KernelDensity(
+result = arcpy.sa.KernelDensity(
     crime_points, "WEIGHT",
     cell_size=30,
     search_radius=500,
     area_unit_scale_factor="SQUARE_KILOMETERS"
 )
-out_density_raster = result[0]
+result.save(out_density_raster)
 ```
 
-## 工具 6：`PointDensity` / `LineDensity`
+## 工具 6：`PointDensity` / `LineDensity`（`arcpy.sa`）
 
 ### 参数
 
 - 与 `KernelDensity` 类似（专属点/线密度）。
-
-## 工具 7：`CalculateDensity`（多维数据密度）
-
-### 参数
-
-- `in_features`：输入要素。
-- `bin_size`（可选）：格网大小。
-- `radius_multiplier`（可选）：半径倍率。
-- `out_cell_size`（可选）：输出像元大小。
-- `spatial_reference`（可选）：输出空间参考。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
 
 ## 工具 8：`OrdinaryLeastSquares`（OLS 回归）
 
@@ -193,7 +169,7 @@ out_density_raster = result[0]
 
 - `in_features`：输入要素。
 - `dependent_variable`：因变量字段。
-- `explanatory_variables`：解释变量列表（如 `["X1", "X2", "X3"]`）。
+- `explanatory_variables`：解释变量字符串（如 `"X1;X2;X3"`）。
 - `out_feature_class`：输出结果要素类。
 - `coefficient_output_table`（可选）：系数输出表路径。
 - `diagnostic_output_table`（可选）：诊断输出表路径。
@@ -202,15 +178,16 @@ out_density_raster = result[0]
 ### 返回值
 
 - 返回 `arcpy.Result`。
-- 输出要素包含残差字段，可结合 `ClusterOutlierAnalysis` 分析残差聚集。
+- 输出要素包含残差字段，可结合 `ClustersOutliers` 分析残差聚集。
 - 系数表包含各解释变量的系数、标准误、t-stat、p-val、VIF 等。
+- 注意：OLS 对字段类型、样本规模和数据分布要求较高，测试环境中常需按数据条件调整或跳过。
 
 ### 示例
 
 ```python
 result = arcpy.stats.OrdinaryLeastSquares(
     in_fc, "PRICE",
-    ["SQFT", "BEDROOMS", "AGE"],
+    "SQFT;BEDROOMS;AGE",
     out_fc,
     coefficient_output_table=f"{work_dir}/ols_coef.dbf",
     diagnostic_output_table=f"{work_dir}/ols_diag.dbf"
@@ -226,7 +203,7 @@ print(result.getMessages())
 - `dependent_variable`：因变量。
 - `explanatory_variables`：解释变量。
 - `out_feature_class`：输出要素类。
-- `kernel_type`（可选）：`GAUSSIAN` / `BISQUARE`。
+- `kernel_type`（可选）：`FIXED` / `ADAPTIVE`。
 - `bandwidth_method`（可选）：`AICc` / `BANDWIDTH_PARAMETER`。
 - `distance_band`（可选）：固定带宽值。
 - `weight_field`（可选）：权重字段。
@@ -235,43 +212,20 @@ print(result.getMessages())
 
 - 返回 `arcpy.Result`。
 - 输出属性包含局部 R²、残差等。
+- 注意：GWR 对数据规模与空间分布较敏感，小样本或简化测试数据常不稳定。
 
-## 工具 10：`ExploreTrends`（趋势探索）
+## 工具 10：`ExploratoryRegression`（探索回归）
 
-### 参数
-
-- `in_features`：输入要素。
-- `z_field`：Z 值字段。
-- `out_report`：输出 PDF 报告路径。
-- `cell_size`（可选）：像元大小。
-- `search_radius`（可选）：搜索半径。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-## 工具 11：`PrincipalComponentsAnalysis`（主成分分析）
-
-### 参数
-
-- `in_table`：输入表或要素类。
-- `output_features`：输出要素类。
-- `number_of_components`（可选）：主成分数量。
-- `variables`（必需）：分析变量列表。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
+当前版本推荐用 `ExploratoryRegression` 进行趋势与变量组合探索。
 
 ## 工具 12：`GroupingAnalysis`（分组分析）
 
 ### 参数
 
 - `in_features`：输入要素。
-- `group_by_field`（可选）：分组字段（如果进行监督分组）。
 - `output_features`：输出要素类。
+- `analysis_fields`：分析字段字符串（如 `"A;B;C"`）。
 - `number_of_groups`（必需）：分组数。
-- `analysis_fields`：分析字段列表。
 - `spatial_constraints`（可选）：`NO_SPATIAL_CONSTRAINT` / `CONTIGUITY_EDGES_ONLY` / `CONTIGUITY_EDGES_CORNERS` / `GET_SPATIAL_WEIGHTS_FROM_FILE`。
 - `create_graph`（可选）：是否输出聚类图。
 
@@ -279,26 +233,29 @@ print(result.getMessages())
 
 - 返回 `arcpy.Result`。
 - 输出要素包含 `SSQ`、`SC_Label` 等字段。
+- 注意：`GroupingAnalysis` 的参数契约在不同 ArcGIS 版本/本地化环境下可能存在差异。
 
 ## 工具 13：`MultivariateClustering`（多变量聚类）
 
 ### 参数
 
-- 与 `GroupingAnalysis` 类似。
+- 与 `GroupingAnalysis` 类似，`analysis_fields` 同样建议使用分号分隔字符串。
 - `min_outliers`（可选）：最小离群值数。
 
 ### 返回值
 
 - 返回 `arcpy.Result`。
+- 注意：`MultivariateClustering` 在部分版本需额外指定聚类方法（如 `K_MEANS` / `K_MEDOIDS`）。
 
 ## 工具 14：`ExportXYv`（ASCII/CSV 导出）
 
 ### 参数
 
 - `in_table`：输入表或要素类。
-- `out_file`：输出文件路径（`.txt`、`.csv` 或空格分隔的 `.dat`）。
-- `fields`：导出字段列表（逗号分隔字符串）。
-- `coords_spec`（可选）：坐标规范。
+- `fields`：导出字段字符串（建议使用真实字段名，如 `"OBJECTID;VALUE"`）。
+- `delimiter`：`SPACE` / `COMMA` / `SEMI-COLON` / `TAB`。
+- `out_file`：输出文件路径（`.txt`、`.csv` 或 `.dat`）。
+- `add_field_names`（可选）：`ADD_FIELD_NAMES` / `NO_FIELD_NAMES`。
 
 ### 返回值
 
@@ -307,7 +264,7 @@ print(result.getMessages())
 ### 示例
 
 ```python
-arcpy.stats.ExportXYv(in_fc, out_csv, "OID@;X;Y;VALUE", "COMMA")
+arcpy.stats.ExportXYv(in_fc, "OBJECTID;VALUE", "COMMA", out_csv, "ADD_FIELD_NAMES")
 ```
 
 ## 输出字段速查
@@ -318,10 +275,10 @@ arcpy.stats.ExportXYv(in_fc, out_csv, "OID@;X;Y;VALUE", "COMMA")
 |------|------|
 | `GiZScore` | Z 得分（热点） |
 | `GiPValue` | P 值（热点） |
-| `GiCluster` | 聚类类型（1=HH, 2=LL, 3=HL, 4=LH, 0=NS） |
+| `GiCluster` / `Gi_Bin` | 聚类分级字段（不同版本字段名略有差异） |
 | `COType` | 聚类/离群类型（同上，LISA） |
-| `LZiScore` | LISA Z 得分 |
-| `LPValue` | LISA P 值 |
+| `LMiZScore` | LISA Z 得分 |
+| `LMiPValue` | LISA P 值 |
 
 ### OLS 输出字段
 
@@ -342,11 +299,14 @@ arcpy.stats.ExportXYv(in_fc, out_csv, "OID@;X;Y;VALUE", "COMMA")
 - 全局 Moran's I 和局部 LISA 结果不一致时，说明存在空间非平稳性（考虑用 GWR）。
 - 输入字段存在空值（NoData）导致工具跳过整条记录。
 - 回归分析残差存在空间自相关时，说明 OLS 假设不完整（考虑空间滞后/误差模型）。
+- `ExportXYv` 使用不存在的字段名（如 `OID`）会报错，建议使用实际字段名（如 `OBJECTID`）。
+- `KernelDensity` 等 `arcpy.sa` 输出为栅格对象，不能按 `result[0]` 读取，应先 `.save(...)`。
 
 ## 最小可运行骨架
 
 ```python
 import arcpy
+from pathlib import Path
 
 def spatial_analysis(in_fc: str, field: str, out_dir: str) -> dict:
     out_dir = Path(out_dir)
@@ -369,14 +329,13 @@ def spatial_analysis(in_fc: str, field: str, out_dir: str) -> dict:
         generate_report="GENERATE_REPORT"
     )
 
-    # OLS 回归
+    # OLS 回归（示例；实际项目请根据字段类型与样本规模调整）
     ols_out = out_dir / "ols_result.shp"
     coef_table = out_dir / "ols_coef.dbf"
     diag_table = out_dir / "ols_diag.dbf"
     arcpy.stats.OrdinaryLeastSquares(
-        in_fc, field, ["X1", "X2"], str(ols_out),
-        coefficient_output_table=str(coef_table),
-        diagnostic_output_table=str(diag_table)
+        in_fc, field, "X1;X2", str(ols_out),
+        str(coef_table), str(diag_table)
     )
 
     return {"hotspots": str(hs_out), "ols": str(ols_out)}

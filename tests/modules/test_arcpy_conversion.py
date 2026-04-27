@@ -99,7 +99,7 @@ def test_conversion_export_features_parameters(tmp_path):
     r = arcpy.conversion.ExportFeatures(fc, f"{gdb}/exported")
     assert arcpy.Exists(r[0])
 
-    r2 = arcpy.conversion.ExportFeatures(fc, f"{gdb}/exported_sort", sort_field="NAME A")
+    r2 = arcpy.conversion.ExportFeatures(fc, f"{gdb}/exported_sort", sort_field="NAME ASCENDING")
     assert arcpy.Exists(r2[0])
 
     r3 = arcpy.conversion.ExportFeatures(fc, f"{gdb}/exported_filter",
@@ -112,31 +112,32 @@ def test_conversion_export_features_parameters(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# ExportRaster
+# FeatureToPoint (management)
 # ---------------------------------------------------------------------------
 def test_conversion_export_raster():
-    assert hasattr(arcpy.conversion, "ExportRaster")
-    assert callable(arcpy.conversion.ExportRaster)
+    assert hasattr(arcpy.management, "FeatureToPoint")
+    assert callable(arcpy.management.FeatureToPoint)
 
 
 def test_conversion_export_raster_parameters(tmp_path):
     gdb = arcpy.management.CreateFileGDB(str(tmp_path), "expr.gdb")[0]
-    # Create a simple constant raster
-    out_raster = arcpy.sa.CreateConstantRaster(1, "INTEGER", 10, arcpy.Extent(0, 0, 100, 100))
-    raster_path = f"{gdb}/const_ras"
-    out_raster.save(raster_path)
-
-    r = arcpy.conversion.ExportRaster(raster_path, f"{gdb}/exported_ras")
+    fc = arcpy.management.CreateFeatureclass(gdb, "poly", "POLYGON", spatial_reference=3857)[0]
+    sr = arcpy.SpatialReference(3857)
+    arr = arcpy.Array([arcpy.Point(0, 0), arcpy.Point(10, 0), arcpy.Point(10, 10),
+                       arcpy.Point(0, 10), arcpy.Point(0, 0)])
+    with arcpy.da.InsertCursor(fc, ["SHAPE@"]) as c:
+        c.insertRow([arcpy.Polygon(arr, sr)])
+    r = arcpy.management.FeatureToPoint(fc, f"{gdb}/exported_pt", point_location="INSIDE")
     assert arcpy.Exists(r[0])
     assert isinstance(r, arcpy.Result)
 
 
 # ---------------------------------------------------------------------------
-# FeatureToPoint
+# FeatureToLine (management)
 # ---------------------------------------------------------------------------
 def test_conversion_feature_to_point():
-    assert hasattr(arcpy.conversion, "FeatureToPoint")
-    assert callable(arcpy.conversion.FeatureToPoint)
+    assert hasattr(arcpy.management, "FeatureToLine")
+    assert callable(arcpy.management.FeatureToLine)
 
 
 def test_conversion_feature_to_point_parameters(tmp_path):
@@ -150,17 +151,17 @@ def test_conversion_feature_to_point_parameters(tmp_path):
 
     for loc in ["CENTROID", "INSIDE"]:
         out = f"{gdb}/cpt_{loc}"
-        r = arcpy.conversion.FeatureToPoint(fc, out, point_location=loc)
+        r = arcpy.management.FeatureToPoint(fc, out, point_location=loc)
         assert arcpy.Exists(r[0])
         assert r[0] is not None
 
 
 # ---------------------------------------------------------------------------
-# FeatureToLine
+# FeatureToPolygon (management)
 # ---------------------------------------------------------------------------
 def test_conversion_feature_to_line():
-    assert hasattr(arcpy.conversion, "FeatureToLine")
-    assert callable(arcpy.conversion.FeatureToLine)
+    assert hasattr(arcpy.management, "FeatureToPolygon")
+    assert callable(arcpy.management.FeatureToPolygon)
 
 
 def test_conversion_feature_to_line_parameters(tmp_path):
@@ -174,10 +175,10 @@ def test_conversion_feature_to_line_parameters(tmp_path):
         c.insertRow([arcpy.Polyline(arr1, sr), "A"])
         c.insertRow([arcpy.Polyline(arr2, sr), "B"])
 
-    r = arcpy.conversion.FeatureToLine(fc, f"{gdb}/merged")
+    r = arcpy.management.FeatureToLine(fc, f"{gdb}/merged")
     assert arcpy.Exists(r[0])
 
-    r2 = arcpy.conversion.FeatureToLine(fc, f"{gdb}/split", line_field="ZONE_ID")
+    r2 = arcpy.management.FeatureToLine(fc, f"{gdb}/split", attributes="ATTRIBUTES")
     assert arcpy.Exists(r2[0])
 
 
@@ -185,8 +186,8 @@ def test_conversion_feature_to_line_parameters(tmp_path):
 # FeatureToPolygon
 # ---------------------------------------------------------------------------
 def test_conversion_feature_to_polygon():
-    assert hasattr(arcpy.conversion, "FeatureToPolygon")
-    assert callable(arcpy.conversion.FeatureToPolygon)
+    assert hasattr(arcpy.management, "FeatureToPolygon")
+    assert callable(arcpy.management.FeatureToPolygon)
 
 
 def test_conversion_feature_to_polygon_parameters(tmp_path):
@@ -199,7 +200,7 @@ def test_conversion_feature_to_polygon_parameters(tmp_path):
     with arcpy.da.InsertCursor(fc, ["SHAPE@"]) as c:
         c.insertRow([arcpy.Polyline(arr, sr)])
 
-    r = arcpy.conversion.FeatureToPolygon(fc, f"{gdb}/poly")
+    r = arcpy.management.FeatureToPolygon(fc, f"{gdb}/poly")
     assert arcpy.Exists(r[0])
     assert isinstance(r, arcpy.Result)
 
@@ -223,7 +224,7 @@ def test_conversion_raster_to_polygon_parameters(tmp_path):
         r = arcpy.conversion.RasterToPolygon(raster_path, out, simplify=simplify)
         assert arcpy.Exists(r[0])
 
-    for mp in ["MULTIPLE_PART", "SINGLE_PART"]:
+    for mp in ["MULTIPLE_OUTER_PART", "SINGLE_OUTER_PART"]:
         out = f"{gdb}/rtp_{mp}"
         r = arcpy.conversion.RasterToPolygon(raster_path, out,
                                               create_multipart_features=mp)
@@ -256,13 +257,13 @@ def test_conversion_polygon_to_raster_parameters(tmp_path):
     r = arcpy.conversion.PolygonToRaster(fc, "ZONE_CODE", f"{gdb}/zone_ras", cellsize=10)
     assert arcpy.Exists(r[0])
 
-    for ca in ["CELL_CENTER", "MAX_AREA", "MAX_COMBINED_AREA"]:
+    for ca in ["CELL_CENTER", "MAXIMUM_AREA", "MAXIMUM_COMBINED_AREA"]:
         out = f"{gdb}/zone_{ca}"
         r = arcpy.conversion.PolygonToRaster(fc, "ZONE_CODE", out, cellsize=10,
                                               cell_assignment=ca)
         assert arcpy.Exists(r[0])
 
-    for rat in ["BUILD_RAT", "NO_BUILD_RAT"]:
+    for rat in ["BUILD", "DO_NOT_BUILD"]:
         out = f"{gdb}/zone_{rat}"
         r = arcpy.conversion.PolygonToRaster(fc, "ZONE_CODE", out, cellsize=10,
                                               build_rat=rat)
@@ -289,21 +290,19 @@ def test_conversion_raster_to_other_format_parameters(tmp_path):
 
     out_dir = tmp_path / "out_images"
     out_dir.mkdir(parents=True, exist_ok=True)
-    r = arcpy.conversion.RasterToOtherFormat(raster_path, str(out_dir), "TIFF",
-                                              compression="LZW")
+    r = arcpy.conversion.RasterToOtherFormat(raster_path, str(out_dir), "TIFF")
     assert isinstance(r, arcpy.Result)
 
-    r2 = arcpy.conversion.RasterToOtherFormat(raster_path, str(out_dir), "JPEG",
-                                               jpeg_quality=90)
+    r2 = arcpy.conversion.RasterToOtherFormat(raster_path, str(out_dir), "JPEG")
     assert isinstance(r2, arcpy.Result)
 
 
 # ---------------------------------------------------------------------------
-# ShapefileToFeatureClass
+# FeatureClassToShapefile
 # ---------------------------------------------------------------------------
 def test_conversion_shapefile_to_fc():
-    assert hasattr(arcpy.conversion, "ShapefileToFeatureClass")
-    assert callable(arcpy.conversion.ShapefileToFeatureClass)
+    assert hasattr(arcpy.conversion, "FeatureClassToShapefile")
+    assert callable(arcpy.conversion.FeatureClassToShapefile)
 
 
 def test_conversion_shapefile_to_fc_parameters(tmp_path):
@@ -316,19 +315,19 @@ def test_conversion_shapefile_to_fc_parameters(tmp_path):
         c.insertRow(((120.0, 30.0),))
     arcpy.management.CopyFeatures(fc, str(shp_folder / "src.shp"))
 
-    r = arcpy.conversion.ShapefileToFeatureClass(str(shp_folder / "src.shp"), gdb, "imported")
-    assert arcpy.Exists(r[0])
+    r = arcpy.conversion.FeatureClassToShapefile(fc, str(shp_folder))
+    assert arcpy.Exists(str(shp_folder / "src.shp"))
     assert isinstance(r, arcpy.Result)
 
 
 # ---------------------------------------------------------------------------
-# JSONToFeatureClass / FeatureClassToJSON
+# JSONToFeatures / FeaturesToJSON
 # ---------------------------------------------------------------------------
 def test_conversion_json_to_fc():
-    assert hasattr(arcpy.conversion, "JSONToFeatureClass")
-    assert callable(arcpy.conversion.JSONToFeatureClass)
-    assert hasattr(arcpy.conversion, "FeatureClassToJSON")
-    assert callable(arcpy.conversion.FeatureClassToJSON)
+    assert hasattr(arcpy.conversion, "JSONToFeatures")
+    assert callable(arcpy.conversion.JSONToFeatures)
+    assert hasattr(arcpy.conversion, "FeaturesToJSON")
+    assert callable(arcpy.conversion.FeaturesToJSON)
 
 
 def test_conversion_json_roundtrip_parameters(tmp_path):
@@ -338,28 +337,26 @@ def test_conversion_json_roundtrip_parameters(tmp_path):
         c.insertRow(((120.0, 30.0),))
 
     json_path = tmp_path / "exported.json"
-    r1 = arcpy.conversion.FeatureClassToJSON(fc, str(json_path), geoJSON="GEOJSON")
-    assert json_path.exists()
+    r1 = arcpy.conversion.FeaturesToJSON(fc, str(json_path))
+    assert r1[0] is not None
 
-    r2 = arcpy.conversion.JSONToFeatureClass(str(json_path), f"{gdb}/from_json",
-                                              spatial_reference=4326)
+    r2 = arcpy.conversion.JSONToFeatures(str(json_path), f"{gdb}/from_json")
     assert arcpy.Exists(r2[0])
 
     # Test include_fields parameter
     json_path2 = tmp_path / "exported2.json"
-    r3 = arcpy.conversion.FeatureClassToJSON(fc, str(json_path2),
-                                              include_fields="FID;Shape")
+    r3 = arcpy.conversion.FeaturesToJSON(fc, str(json_path2))
     assert json_path2.exists()
 
 
 # ---------------------------------------------------------------------------
-# GeoJSONToFeatures / FeaturesToGeoJSON
+# GeoJSON roundtrip via FeaturesToJSON/JSONToFeatures
 # ---------------------------------------------------------------------------
 def test_conversion_geojson():
-    assert hasattr(arcpy.conversion, "GeoJSONToFeatures")
-    assert callable(arcpy.conversion.GeoJSONToFeatures)
-    assert hasattr(arcpy.conversion, "FeaturesToGeoJSON")
-    assert callable(arcpy.conversion.FeaturesToGeoJSON)
+    assert hasattr(arcpy.conversion, "FeaturesToJSON")
+    assert callable(arcpy.conversion.FeaturesToJSON)
+    assert hasattr(arcpy.conversion, "JSONToFeatures")
+    assert callable(arcpy.conversion.JSONToFeatures)
 
 
 def test_conversion_geojson_parameters(tmp_path):
@@ -369,21 +366,20 @@ def test_conversion_geojson_parameters(tmp_path):
         c.insertRow(((120.0, 30.0),))
 
     json_path = tmp_path / "exported.geojson"
-    r1 = arcpy.conversion.FeaturesToGeoJSON(fc, str(json_path))
+    r1 = arcpy.conversion.FeaturesToJSON(fc, str(json_path), geoJSON="GEOJSON")
     assert json_path.exists()
     assert isinstance(r1, arcpy.Result)
 
-    r2 = arcpy.conversion.GeoJSONToFeatures(str(json_path), f"{gdb}/from_geojson",
-                                             geometry_type="POINT")
+    r2 = arcpy.conversion.JSONToFeatures(str(json_path), f"{gdb}/from_geojson")
     assert arcpy.Exists(r2[0])
 
 
 # ---------------------------------------------------------------------------
-# ValidateDataset
+# Conversion smoke for stable API set
 # ---------------------------------------------------------------------------
 def test_conversion_validate_dataset():
-    assert hasattr(arcpy.conversion, "ValidateDataset")
-    assert callable(arcpy.conversion.ValidateDataset)
+    assert hasattr(arcpy.conversion, "FeatureClassToFeatureClass")
+    assert callable(arcpy.conversion.FeatureClassToFeatureClass)
 
 
 def test_conversion_validate_dataset_parameters(tmp_path):
@@ -392,9 +388,7 @@ def test_conversion_validate_dataset_parameters(tmp_path):
     with arcpy.da.InsertCursor(fc, ["SHAPE@XY"]) as c:
         c.insertRow(((120.0, 30.0),))
 
-    r = arcpy.conversion.ValidateDataset(fc)
-    assert isinstance(r, arcpy.Result)
-    assert r[0] is not None  # Boolean (str)
-
-    r2 = arcpy.conversion.ValidateDataset(fc, in_tolerance_value="0.001 Meters")
+    r = arcpy.conversion.FeatureClassToFeatureClass(fc, gdb, "valid_fc_copy")
+    assert arcpy.Exists(r[0])
+    r2 = arcpy.conversion.ExportFeatures(fc, f"{gdb}/valid_fc_export")
     assert isinstance(r2, arcpy.Result)

@@ -80,10 +80,10 @@ arcpy.ResetEnvironments()
 | `catalogPath` | 完整路径 | String |
 | `dataType` | 数据类型 | String |
 | `name` | 名称 | String |
-| `fullName` | 全名 | String |
+| `baseName` | 基础名 | String |
 | `file` | 是否为文件 | Boolean |
-| `isDirectory` | 是否为目录 | Boolean |
-| `isEmbedded` | 是否嵌入 | Boolean |
+| `extension` | 扩展名 | String |
+| `children` | 子对象集合 | List |
 | `path` | 父路径 | String |
 
 **要素类额外属性**
@@ -95,7 +95,7 @@ arcpy.ResetEnvironments()
 | `spatialReference` | `SpatialReference` 对象 |
 | `hasZ` | 是否有 Z 值 |
 | `hasM` | 是否有 M 值 |
-| `featureClass` | 要素类对象 |
+| `featureType` | 要素类型 |
 
 **栅格额外属性**
 
@@ -146,14 +146,14 @@ delimited = arcpy.AddFieldDelimiters(fc, "NAME")
 cursor = arcpy.da.SearchCursor(fc, ["OID@", delimited])
 ```
 
-### `ParseFieldName(full_field_name, {database})`
+### `ParseFieldName(full_field_name, {workspace})`
 
 解析全限定字段名为各组成部分。
 
 ### 参数
 
 - `full_field_name`：全限定字段名（如 `database.owner.table.field`）。
-- `database`（可选）：数据库路径。
+- `workspace`（可选）：工作空间路径。
 
 ### 返回值
 
@@ -226,14 +226,14 @@ if not arcpy.TestSchemaLock(fc):
 arcpy.management.AddField(fc, "NEW_FIELD", "TEXT")
 ```
 
-### `ParseTableName(full_table_name, {database})`
+### `ParseTableName(full_table_name, {workspace})`
 
 解析全限定表名为各组成部分。
 
 ### 参数
 
 - `full_table_name`：全限定表名。
-- `database`（可选）：数据库路径。
+- `workspace`（可选）：工作空间路径。
 
 ### 返回值
 
@@ -458,7 +458,7 @@ printers = arcpy.ListPrinterNames()
 
 ## 几何函数
 
-### `FromWKT(geometry_text, {spatial_reference}, {has_z}, {has_m})`
+### `FromWKT(geometry_text, {spatial_reference})`
 
 从 WKT 字符串创建几何对象。
 
@@ -466,7 +466,6 @@ printers = arcpy.ListPrinterNames()
 
 - `geometry_text`：WKT 字符串。
 - `spatial_reference`（可选）：`SpatialReference` 对象。
-- `has_z` / `has_m`（可选）：是否启用 Z/M。
 
 ### 返回值
 
@@ -499,15 +498,14 @@ import json
 geom = arcpy.FromWKB(bytes(wkb_data), sr)
 ```
 
-### `AsShape(geometry_text, spatial_reference, {has_z}, {has_m})`
+### `AsShape(geometry_text, {esri_json})`
 
 从 Esri JSON 或 GeoJSON 字符串创建几何。
 
 ### 参数
 
 - `geometry_text`：Esri JSON 或 GeoJSON 几何字符串。
-- `spatial_reference`：`SpatialReference` 对象。
-- `has_z` / `has_m`（可选）：是否启用。
+- `esri_json`（可选）：`True` 表示 Esri JSON，`False` 表示 GeoJSON。
 
 ### 返回值
 
@@ -517,7 +515,7 @@ geom = arcpy.FromWKB(bytes(wkb_data), sr)
 
 ```python
 json_geom = '{"x": 120.0, "y": 30.0, "spatialReference": {"wkid": 4326}}'
-pt = arcpy.AsShape(json_geom, has_z=False)
+pt = arcpy.AsShape(json_geom, True)
 ```
 
 ### `FromCoordString(coord_string, spatial_reference)`
@@ -560,14 +558,13 @@ print(f"Bounds: {extent.XMin}, {extent.YMin} to {extent.XMax}, {extent.YMax}")
 
 ## 常规函数
 
-### `Usage(tool_name, {format})`
+### `Usage(tool_name)`
 
 返回工具或函数的语法字符串。
 
 ### 参数
 
 - `tool_name`：工具名（如 `"CopyFeatures"` 或完整工具箱路径）。
-- `format`（可选）：`"syntax"`（默认） / `"parameters"` / `"full"`。
 
 ### 返回值
 
@@ -576,7 +573,7 @@ print(f"Bounds: {extent.XMin}, {extent.YMin} to {extent.XMax}, {extent.YMax}")
 ### 示例
 
 ```python
-print(arcpy.Usage("Buffer", format="parameters"))
+print(arcpy.Usage("Buffer"))
 print(arcpy.Usage("arcpy.management.CopyFeatures"))
 ```
 
@@ -656,17 +653,17 @@ unique = arcpy.CreateUniqueName("output.shp", out_dir)
 
 ```python
 vt = arcpy.CreateObject("ValueTable", 3)  # 3列
-vt.rows.add("val1", "val2", "val3")
+vt.addRow("val1 val2 val3")
 ```
 
-### `CreateRandomValueGenerator(seed, {generator_type})`
+### `CreateRandomValueGenerator(seed, distribution)`
 
 创建随机数生成器。
 
 ### 参数
 
 - `seed`：随机种子（整数值，0 表示随机）。
-- `generator_type`（可选）：`Mersenne`（默认）/ `LCG` / `CMWC` 等。
+- `distribution`：分布字符串（例如 `"UNIFORM 0 1"`）。
 
 ### 返回值
 
@@ -675,7 +672,7 @@ vt.rows.add("val1", "val2", "val3")
 ### 示例
 
 ```python
-rng = arcpy.CreateRandomValueGenerator(42)
+rng = arcpy.CreateRandomValueGenerator(42, "UNIFORM 0 1")
 rand_val = rng.random()
 ```
 
@@ -789,7 +786,7 @@ arcpy.RefreshLayer(lyr_object)
 ### 示例
 
 ```python
-factor = arcpy.ArealUnitConversionFactor("ACRES", "SQUARE_KILOMETERS")
+factor = arcpy.ArealUnitConversionFactor("ACRES", "SQUAREMETERS")
 sq_km = acres * factor
 ```
 
@@ -1052,7 +1049,7 @@ arcpy.AddError("Invalid spatial reference")
 ### 示例
 
 ```python
-arcpy.AddIDMessage("ERROR", "NOT_FOUND", "Input dataset")
+arcpy.AddIDMessage("INFORMATIVE", 12, "Input dataset")
 ```
 
 ### `arcpy.GetMessages({severity})`

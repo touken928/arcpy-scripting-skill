@@ -75,7 +75,7 @@ arcpy.analysis.Clip(in_fc, boundary_fc, out_fc)
 
 - `in_features`：输入要素集合（列表或单个路径，多个时逗号分隔字符串）。
 - `out_feature_class`：输出要素类。
-- `join_attributes`（可选）：`ALL` / `FID_ONLY` / `NO_FID`。
+- `join_attributes`（可选）：`ALL` / `ONLY_FID` / `NO_FID`。
 - `cluster_tolerance`（可选）：拓扑容差。
 - `output_type`（可选）：`INPUT` / `LINE` / `POINT`。
 
@@ -95,7 +95,7 @@ arcpy.analysis.Intersect([roads_fc, district_fc], out_fc, output_type="LINE")
 
 - `in_features`：输入要素集合。
 - `out_feature_class`：输出要素类。
-- `join_attributes`（可选）：同上。
+- `join_attributes`（可选）：同上（`ALL` / `ONLY_FID` / `NO_FID`）。
 - `cluster_tolerance`（可选）：同上。
 - `gaps`（可选）：是否保留空白区域（`ALL` / `NO_GAPS`）。
 
@@ -237,12 +237,12 @@ result = arcpy.analysis.GenerateNearTable(in_fc, near_fc, out_table, search_radi
 
 - 返回 `arcpy.Result`。
 
-## 工具 11：`SelectLayerByLocation`
+## 工具 11：`SelectLayerByLocation`（`arcpy.management`）
 
 ### 参数
 
 - `in_layer`：输入图层（需为图层对象，非要素类路径）。
-- `overlap_type`：`INTERSECT` / `WITHIN_A_DISTANCE` / `CONTAINS` / `COMPLETELY_CONTAINS` / `CROSSES` / `WITHIN` / `ARE_IDENTICAL_TO` / `BOUNDARY_TOUCHES`。
+- `overlap_type`：常用 `INTERSECT` / `WITHIN_A_DISTANCE` / `WITHIN` / `CONTAINS`（不同数据类型可用值存在差异，建议按工具帮助校验）。
 - `select_features`：选择要素。
 - `search_distance`（可选）：搜索距离（用于 `WITHIN_A_DISTANCE`）。
 - `selection_type`：`NEW_SELECTION` / `ADD_TO_SELECTION` / `REMOVE_FROM_SELECTION` / `SUBSET_SELECTION` / `CLEAR_SELECTION`。
@@ -259,7 +259,7 @@ lyr = arcpy.management.MakeFeatureLayer(fc, "lyr")[0]
 arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc)
 ```
 
-## 工具 12：`Dissolve`
+## 工具 12：`Dissolve`（`arcpy.management`）
 
 ### 参数
 
@@ -267,7 +267,7 @@ arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc)
 - `out_feature_class`：输出要素。
 - `dissolve_field`（可选）：融合字段（列表或逗号分隔字符串）。
 - `statistics_fields`（可选）：统计字段。
-- `multi_part`（可选）：`MULTIPLE_PART` / `SINGLE_PART`。
+- `multi_part`（可选）：`MULTI_PART` / `SINGLE_PART`。
 - `unsplit_field`（可选）：不融合字段。
 
 ### 返回值
@@ -280,7 +280,7 @@ arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc)
 arcpy.analysis.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fields="AREA SUM")
 ```
 
-## 工具 13：`FeatureToPoint`
+## 工具 13：`FeatureToPoint`（`arcpy.management`）
 
 ### 参数
 
@@ -292,7 +292,7 @@ arcpy.analysis.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fi
 
 - 返回 `arcpy.Result`。
 
-## 工具 14：`MultipartToSinglepart`
+## 工具 14：`MultipartToSinglepart`（`arcpy.management`）
 
 ### 参数
 

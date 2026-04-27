@@ -13,11 +13,11 @@
 - `Describe`
 - `TableToNumPyArray`
 - `FeatureClassToNumPyArray`
-- `NumPyToFeatures`
-- `NumPyToTable`
+- `NumPyArrayToFeatureClass`
+- `NumPyArrayToTable`
 - `ExtendTable`
-- `ListFields`
-- `ListIndexes`
+- `ListFields`（`arcpy` 顶层函数）
+- `ListIndexes`（`arcpy` 顶层函数）
 - `Domain`
 - `Version`
 
@@ -220,13 +220,13 @@ print(f"Records: {len(arr)}, dtype: {arr.dtype}")
 print(f"First area: {arr['AREA'][0]}")
 ```
 
-## 函数：`NumPyToFeatureClass` / `NumPyToTable`
+## 函数：`NumPyArrayToFeatureClass` / `NumPyArrayToTable`
 
 ### 参数
 
 - `in_array`：NumPy 结构化数组。
 - `out_table` / `out_feature_class`：输出路径。
-- `geometry_type`（可选，`NumPyToFeatureClass`）：`POINT` / `POLYLINE` / `POLYGON`。
+- `shape_fields`（`NumPyArrayToFeatureClass`）：坐标字段名（如 `["X","Y"]`）。
 - `spatial_reference`（可选）：空间参考。
 - `coordinate_system`（可选）：同 `spatial_reference`。
 - `config_keyword`（可选）：存储配置。
@@ -243,7 +243,7 @@ data = np.array([(1, 120.1, 30.2), (2, 120.3, 30.4)],
                 dtype=[("ID", "i4"), ("X", "f8"), ("Y", "f8")])
 # 先创建点要素类
 arcpy.management.CreateFeatureclass(out_gdb, "points", "POINT", spatial_reference=sr)
-arcpy.da.NumPyToFeatureClass(data, f"{out_gdb}/points", ["X", "Y"])
+arcpy.da.NumPyArrayToFeatureClass(data, f"{out_gdb}/points", ["X", "Y"])
 ```
 
 ## 函数：`ExtendTable`
@@ -268,7 +268,7 @@ arr = arcpy.da.TableToNumPyArray(stats_table, ["ZONE", "MEAN_AREA"])
 arcpy.da.ExtendTable(fc, "ZONE_CODE", arr, "ZONE", just_join=True)
 ```
 
-## 函数：`ListFields`
+## 函数：`arcpy.ListFields`
 
 ### 参数
 
@@ -283,11 +283,11 @@ arcpy.da.ExtendTable(fc, "ZONE_CODE", arr, "ZONE", just_join=True)
 ### 示例
 
 ```python
-for fld in arcpy.da.ListFields(fc, field_type="String"):
+for fld in arcpy.ListFields(fc, field_type="String"):
     print(f"{fld.name}: {fld.type}, length={fld.length}")
 ```
 
-## 函数：`ListIndexes`
+## 函数：`arcpy.ListIndexes`
 
 ### 参数
 
@@ -301,7 +301,7 @@ for fld in arcpy.da.ListFields(fc, field_type="String"):
 ### 示例
 
 ```python
-for idx in arcpy.da.ListIndexes(fc):
+for idx in arcpy.ListIndexes(fc):
     print(f"{idx.name}: fields={idx.fields}, isAscending={idx.isAscending}")
 ```
 
@@ -309,8 +309,8 @@ for idx in arcpy.da.ListIndexes(fc):
 
 ### Domain
 
-- `Domain(gdb, domain_name)`：创建域对象。
-- 属性：`type`、`description`、`fieldType`、`mergePolicy`、`splitPolicy`、`codedValues`。
+- 通过 `arcpy.da.ListDomains(gdb)` 获取域对象列表，再按名称筛选。
+- 属性：`name`、`type`（字段类型，如 `Text`/`Short`）、`description`、`domainType`（域类型，如 `CodedValue`/`Range`）、`mergePolicy`、`splitPolicy`、`codedValues`。
 
 ### Version
 
@@ -328,7 +328,7 @@ for idx in arcpy.da.ListIndexes(fc):
 - 盲目使用 `*` 导致性能下降和语义不清（大型表尤甚）。
 - 更新游标中同时修改几何和属性但未控制事务，导致部分写入。
 - 在 EGDB 环境中忽略编辑会话要求，写入失败。
-- `NumPyToFeatureClass` 前未创建目标要素类。
+- 使用 NumPy 写回时优先使用 `NumPyArrayToFeatureClass` / `NumPyArrayToTable`，并保证字段名与 dtype 对齐。
 - `ExtendTable` 的连接字段类型不匹配（如字符串 vs 整数）。
 - 几何令牌使用不当（如在只需要质心时使用 `SHAPE@` 导致性能损耗）。
 - 空间过滤对象（`SearchFilter`）使用前确认本机 ArcGIS Pro 版本支持。

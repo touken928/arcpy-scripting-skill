@@ -40,7 +40,7 @@
 - `NDBI`
 - `EVI`
 - `SAVI`
-- `NBR` / `NBR2`
+- `NBR`（`NBR2` 在当前 ArcPy IA 构建中不可用）
 - `MSAVI`
 - `GNDVI`
 - `VARI`
@@ -65,8 +65,8 @@
 ### 参数
 
 - `in_raster`：多波段栅格路径或 `Raster` 对象。
-- `nir_band`（可选，11.0+）：近红外波段索引（从 1 开始，默认为 `4`）。
-- `red_band`（可选，11.0+）：红光波段索引（默认为 `3`）。
+- `nir_band_id`（可选）：近红外波段索引（从 1 开始，默认为 `4`）。
+- `red_band_id`（可选）：红光波段索引（默认为 `3`）。
 
 ### 返回值
 
@@ -76,7 +76,7 @@
 ### 示例
 
 ```python
-ndvi = arcpy.ia.NDVI(in_multiband_raster, nir_band=4, red_band=3)
+ndvi = arcpy.ia.NDVI(in_multiband_raster, nir_band_id=4, red_band_id=3)
 ndvi.save(out_ndvi)
 ```
 
@@ -85,8 +85,8 @@ ndvi.save(out_ndvi)
 ### 参数
 
 - `in_raster`：输入多波段栅格。
-- `nir_band`（可选）：近红外波段索引。
-- `green_band`（可选）：绿光波段索引（默认 `2`）。
+- `nir_band_id`（可选）：近红外波段索引。
+- `green_band_id`（可选）：绿光波段索引。
 
 ### 返回值
 
@@ -95,7 +95,7 @@ ndvi.save(out_ndvi)
 ### 示例
 
 ```python
-ndwi = arcpy.ia.NDWI(in_raster, green_band=2, nir_band=4)
+ndwi = arcpy.ia.NDWI(in_raster, green_band_id=2, nir_band_id=4)
 ```
 
 ## 函数 3：`NDBI`
@@ -103,8 +103,8 @@ ndwi = arcpy.ia.NDWI(in_raster, green_band=2, nir_band=4)
 ### 参数
 
 - `in_raster`：输入多波段栅格。
-- `nir_band`（可选）：近红外波段索引。
-- `swir_band`（可选，短波红外，默认 `6`）。
+- `nir_band_id`（可选）：近红外波段索引。
+- `swir_band_id`（可选）：短波红外波段索引。
 
 ### 返回值
 
@@ -115,10 +115,10 @@ ndwi = arcpy.ia.NDWI(in_raster, green_band=2, nir_band=4)
 ### 参数
 
 - `in_raster`：输入栅格。
-- `cell_factor`：聚合因子（整数值，如 `4` 表示 4×4 聚合）。
-- `aggregation_type`（可选）：`CELL_CENTER` / `SUM` / `MAX` / `MIN` / `MEAN` / `MEDIAN`。
-- `expand_ratio`（可选）：扩展比。
-- `variance_ratio`（可选）：方差比。
+- `dimension_name`：聚合维度名。
+- `raster_function`：聚合所用栅格函数。
+- `raster_function_arguments`（可选）：栅格函数参数字典。
+- `aggregation_definition`（可选）：聚合定义。
 
 ### 返回值
 
@@ -127,7 +127,7 @@ ndwi = arcpy.ia.NDWI(in_raster, green_band=2, nir_band=4)
 ### 示例
 
 ```python
-agg = arcpy.ia.Aggregate(in_raster, cell_factor=4, aggregation_type="MEAN")
+agg = arcpy.ia.Aggregate(in_raster, "StdTime", "Mean")
 ```
 
 ## 函数 5：`Classify`
@@ -173,8 +173,7 @@ result = arcpy.ia.MLClassify(in_raster, signature_file)
 - `in_raster`：输入影像。
 - `spectral_detail`（可选）：光谱细节（1-20，越高分割越细）。
 - `spatial_detail`（可选）：空间细节（1-20）。
-- `min_segment_size`：最小分割块大小（像素数）。
-- `band_indexes`（可选）：参与分割的波段索引（如 `"1 2 3 4 5"`）。
+- `min_num_pixels_per_segment`（可选）：最小分割块像素数。
 
 ### 返回值
 
@@ -187,8 +186,7 @@ segments = arcpy.ia.SegMeanShift(
     in_raster,
     spectral_detail=15,
     spatial_detail=10,
-    min_segment_size=100,
-    band_indexes="1 2 3 4"
+    min_num_pixels_per_segment=100
 )
 ```
 
@@ -237,11 +235,6 @@ segments = arcpy.ia.SegMeanShift(
 ### 参数
 
 - `in_raster`：输入栅格。
-- `threshold_type`（可选）：`OTSU` / `HISTOGRAM` / `PERCENTILE`。
-- `threshold_count`（可选）：阈值/百分位数。
-
-### 返回值
-
 - 返回二值化 `Raster` 对象。
 
 ## 函数 12：`Gradient`
@@ -249,8 +242,8 @@ segments = arcpy.ia.SegMeanShift(
 ### 参数
 
 - `in_raster`：输入高程/数值栅格。
-- `gradient_type`（可选）：`DEGREE` / `PERCENT` / `RADIAN`。
-- `unit`（可选）：`METER` / `FOOT` / `KILOMETER`。
+- `gradient_dimension`（可选）：`X` / `Y`。
+- `denominator_unit`（可选）：单位参数，默认 `DEFAULT`。
 
 ### 返回值
 
@@ -261,7 +254,7 @@ segments = arcpy.ia.SegMeanShift(
 ### 参数
 
 - `in_raster`：输入多波段栅格（通常为 Landsat 或 Sentinel-2）。
-- `sensor`（可选）：传感器类型（`LandsatTM` / `LandsatETM` / `Sentinel2` 等，自动推断时可省略）。
+- `TasseledCap` 需要符合算法要求的多波段传感器数据，单波段或不匹配波段数会失败。
 
 ### 返回值
 
@@ -279,8 +272,8 @@ tasseled.save(out_tc)
 ### 参数
 
 - `in_raster`：输入栅格。
-- `from_units`：源单位。
-- `to_units`：目标单位。
+- `from_unit`：源单位（如 `Meters`、`Feet`）。
+- `to_unit`：目标单位（如 `Feet`、`Miles`、`KilometersPerHour`）。
 - `cell_size`（可选）：像元大小。
 
 ### 返回值
@@ -290,7 +283,7 @@ tasseled.save(out_tc)
 ### 示例
 
 ```python
-converted = arcpy.ia.UnitConversion(dem, "METER", "KILOMETER")
+converted = arcpy.ia.UnitConversion(dem, "Meters", "Feet")
 ```
 
 ## 函数 15：`ColormapToRGB`
@@ -316,7 +309,7 @@ rgb.save(out_rgb)
 ### 参数
 
 - `in_raster`：输入多波段栅格。
-- `weighted`（可选）：加权系数列表（如 `[0.3, 0.59, 0.11]`）。
+- `conversion_parameters`（可选）：灰度转换参数字符串。
 
 ### 返回值
 
@@ -373,11 +366,11 @@ pixel_block = pbc.read(block_x=0, block_y=0, width=256, height=256)
 
 ## 类：`Mensuration`
 
-用于测量影像中的对象（高度、面积等）：
+用于测量影像中的对象（高度、面积等），常见方法为 `HeightMeasurement` / `AreaMeasurement` / `LinearMeasurement`：
 
 ```python
 mens = arcpy.ia.Mensuration(in_raster)
-height = mens.measureHeight(point_a, point_b)
+height = mens.HeightMeasurement(point_a, point_b)
 ```
 
 ## 类：`RasterCollection`
@@ -396,6 +389,7 @@ filtered = rc.filterByTime("2023-01-01", "2023-12-31")
 - 影像分析环境参数未固定导致跨批次结果不一致。
 - 分类前未统一像元大小和投影，导致训练与推理结果偏差。
 - `SegMeanShift` 的 `spectral_detail` 设得太高导致过度分割。
+- `SegMeanShift` 需要满足输入栅格类型要求（常见为 UCHAR 多波段影像），不满足时会在运行时失败。
 - `XarrayToRaster` 时坐标顺序错误导致空间参考错位（N 最后放）。
 - `PixelBlock` 操作后未正确写入导致修改未生效。
 
@@ -409,10 +403,10 @@ def analyze_imagery(in_multiband: str, out_dir: str) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    ndvi = arcpy.ia.NDVI(in_multiband, nir_band=4, red_band=3)
+    ndvi = arcpy.ia.NDVI(in_multiband, nir_band_id=4, red_band_id=3)
     ndvi.save(str(out_dir / "ndvi.tif"))
 
-    segments = arcpy.ia.SegMeanShift(in_multiband, 15, 10, 100)
+    segments = arcpy.ia.SegMeanShift(in_multiband, 15, 10, min_num_pixels_per_segment=100)
     segments.save(str(out_dir / "segments.tif"))
 
     classified = arcpy.ia.Classify(segments, classifier_def)

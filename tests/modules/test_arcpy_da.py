@@ -316,10 +316,10 @@ def test_da_table_to_numpy(tmp_path):
 # NumPyToFeatureClass / NumPyToTable
 # ---------------------------------------------------------------------------
 def test_da_from_numpy_exists():
-    assert hasattr(arcpy.da, "NumPyToFeatureClass")
-    assert callable(arcpy.da.NumPyToFeatureClass)
-    assert hasattr(arcpy.da, "NumPyToTable")
-    assert callable(arcpy.da.NumPyToTable)
+    assert hasattr(arcpy.da, "NumPyArrayToFeatureClass")
+    assert callable(arcpy.da.NumPyArrayToFeatureClass)
+    assert hasattr(arcpy.da, "NumPyArrayToTable")
+    assert callable(arcpy.da.NumPyArrayToTable)
 
 
 def test_da_numpy_to_fc(tmp_path):
@@ -330,20 +330,20 @@ def test_da_numpy_to_fc(tmp_path):
 
     data = np.array([(1, 120.0, 30.0), (2, 121.0, 31.0)],
                      dtype=[("ID", "i4"), ("X", "f8"), ("Y", "f8")])
-    arcpy.da.NumPyToFeatureClass(data, fc, ["X", "Y"], spatial_reference=sr)
-    count = int(arcpy.management.GetCount(fc)[0])
+    out_fc = f"{gdb}/pts_np"
+    arcpy.da.NumPyArrayToFeatureClass(data, out_fc, ["X", "Y"], spatial_reference=sr)
+    count = int(arcpy.management.GetCount(out_fc)[0])
     assert count == 2
 
 
 def test_da_numpy_to_table(tmp_path):
     gdb = arcpy.management.CreateFileGDB(str(tmp_path), "npt.gdb")[0]
-    fc = arcpy.management.CreateFeatureclass(gdb, "pts", "POINT", spatial_reference=4326)[0]
-    arcpy.management.AddField(fc, "ID", "LONG")
+    out_tbl = f"{gdb}/np_tbl"
 
     data = np.array([(1, 10.0), (2, 20.0)],
                      dtype=[("ID", "i4"), ("VAL", "f8")])
-    arcpy.da.NumPyToTable(data, fc)
-    count = int(arcpy.management.GetCount(fc)[0])
+    arcpy.da.NumPyArrayToTable(data, out_tbl)
+    count = int(arcpy.management.GetCount(out_tbl)[0])
     assert count == 2
 
 
@@ -359,7 +359,6 @@ def test_da_extend_table_parameters(tmp_path):
     gdb = arcpy.management.CreateFileGDB(str(tmp_path), "ext.gdb")[0]
     fc = arcpy.management.CreateFeatureclass(gdb, "pts", "POINT", spatial_reference=4326)[0]
     arcpy.management.AddField(fc, "ZONE_CODE", "TEXT", field_length=10)
-    arcpy.management.AddField(fc, "MEAN_AREA", "DOUBLE")
     with arcpy.da.InsertCursor(fc, ["SHAPE@XY", "ZONE_CODE"]) as c:
         c.insertRow(((120.0, 30.0), "A"))
         c.insertRow(((121.0, 31.0), "B"))
@@ -387,8 +386,8 @@ def test_da_extend_table_parameters(tmp_path):
 # ListFields
 # ---------------------------------------------------------------------------
 def test_da_list_fields():
-    assert hasattr(arcpy.da, "ListFields")
-    assert callable(arcpy.da.ListFields)
+    assert hasattr(arcpy, "ListFields")
+    assert callable(arcpy.ListFields)
 
 
 def test_da_list_fields_parameters(tmp_path):
@@ -398,26 +397,26 @@ def test_da_list_fields_parameters(tmp_path):
     arcpy.management.AddField(fc, "POP", "DOUBLE")
 
     # All fields
-    fields = list(arcpy.da.ListFields(fc))
+    fields = list(arcpy.ListFields(fc))
     names = [f.name for f in fields]
     assert "NAME" in names
     assert "POP" in names
 
     # With wildcard
-    fields = list(arcpy.da.ListFields(fc, wildcard="N*"))
+    fields = list(arcpy.ListFields(fc, wild_card="N*"))
     names = [f.name for f in fields]
     assert "NAME" in names
     assert "POP" not in names
 
     # With field_type
     for ftype in ["String", "Integer", "Double"]:
-        fields = list(arcpy.da.ListFields(fc, field_type=ftype))
+        fields = list(arcpy.ListFields(fc, field_type=ftype))
         for f in fields:
             if f.type not in ["OID", "Geometry"]:
                 pass  # field_type filter works
 
     # Verify field object properties
-    for f in arcpy.da.ListFields(fc):
+    for f in arcpy.ListFields(fc):
         assert hasattr(f, "name")
         assert hasattr(f, "type")
         assert hasattr(f, "length")
@@ -429,15 +428,15 @@ def test_da_list_fields_parameters(tmp_path):
 # ListIndexes
 # ---------------------------------------------------------------------------
 def test_da_list_indexes():
-    assert hasattr(arcpy.da, "ListIndexes")
-    assert callable(arcpy.da.ListIndexes)
+    assert hasattr(arcpy, "ListIndexes")
+    assert callable(arcpy.ListIndexes)
 
 
 def test_da_list_indexes_parameters(tmp_path):
     gdb = arcpy.management.CreateFileGDB(str(tmp_path), "li.gdb")[0]
     fc = arcpy.management.CreateFeatureclass(gdb, "pts", "POINT", spatial_reference=4326)[0]
 
-    indexes = list(arcpy.da.ListIndexes(fc))
+    indexes = list(arcpy.ListIndexes(fc))
     assert isinstance(indexes, list)
     for idx in indexes:
         assert hasattr(idx, "name")
@@ -462,14 +461,16 @@ def test_da_domain_properties(tmp_path):
     arcpy.management.AddCodedValueToDomain(gdb, "TestDomain", "A", "Alpha")
     arcpy.management.AddCodedValueToDomain(gdb, "TestDomain", "B", "Beta")
 
-    domain = arcpy.da.Domain(gdb, "TestDomain")
+    domain = next(d for d in arcpy.da.ListDomains(gdb) if d.name == "TestDomain")
     assert hasattr(domain, "type")
     assert hasattr(domain, "description")
-    assert hasattr(domain, "fieldType")
+    assert hasattr(domain, "domainType")
     assert hasattr(domain, "mergePolicy")
     assert hasattr(domain, "splitPolicy")
     assert hasattr(domain, "codedValues")
-    assert domain.type == "CodedValue"
+    assert hasattr(domain, "name")
+    assert domain.type == "Text"
+    assert domain.domainType == "CodedValue"
     coded = domain.codedValues
     assert isinstance(coded, dict)
     assert "A" in coded

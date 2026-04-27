@@ -172,7 +172,7 @@ lyr = m.listLayers("roads*")[0]
 ```python
 pdf_format = arcpy.mp.CreateExportFormat("PDF", out_pdf)
 pdf_format.resolution = 300
-pdf_format.compress_pdf = True
+pdf_format.compressVectorGraphics = True
 layout.export(pdf_format)
 ```
 
@@ -271,7 +271,6 @@ ms = layout.mapSeries
 if ms and ms.enabled:
     pdf_options = arcpy.mp.CreateExportFormat("PDF", output_pdf)
     pdf_options.resolution = 300
-    pdf_options.export MapSeries=True
     ms.exportToPDF(pdf_options, "CURRENT")
 ```
 

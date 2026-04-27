@@ -28,7 +28,7 @@
 - `Intersect`（见 `arcpy.analysis`）
 - `Buffer`（见 `arcpy.analysis`）
 
-## 工具 1：`Exists`
+## 工具 1：`Exists`（`arcpy` 顶层函数）
 
 ### 参数
 
@@ -41,8 +41,8 @@
 ### 示例
 
 ```python
-if arcpy.management.Exists(out_fc):
-    arcpy.management.Delete(out_fc)
+if arcpy.Exists(out_fc):
+    arcpy.Delete(out_fc)
 ```
 
 ## 工具 2：`CreateFileGDB`
@@ -89,8 +89,8 @@ folder = arcpy.management.CreateFolder(work_dir, "intermediate")[0]
 - `geometry_type`：`POINT` / `POLYLINE` / `POLYGON` 等。
 - `template`（可选）：继承字段结构。
 - `spatial_reference`（建议显式设置）：避免空间参考漂移。
-- `has_m`（可选）：是否包含 M 值。
-- `has_z`（可选）：是否包含 Z 值。
+- `has_m`（可选）：`ENABLED` / `DISABLED` / `SAME_AS_TEMPLATE`。
+- `has_z`（可选）：`ENABLED` / `DISABLED` / `SAME_AS_TEMPLATE`。
 
 ### 返回值
 
@@ -325,7 +325,7 @@ if count == 0:
 - `in_dataset`：输入要素类/栅格。
 - `out_dataset`：输出路径。
 - `out_coor_system`：目标空间参考（`SpatialReference` 对象、WKT 字符串或 EPSG 代码）。
-- `transform_method`（可选）：坐标转换方法。
+- `transform_method`（可选）：坐标转换方法（仅在需要地理转换且方法有效时设置）。
 - `in_coor_system`（可选）：源坐标系。
 - `preserve_shape`（可选）：保留形状参数。
 
@@ -400,10 +400,10 @@ count = int(arcpy.management.GetCount(lyr)[0])
 ### 参数
 
 - `in_layer`：输入图层。
-- `overlap_type`：`INTERSECT` / `WITHIN_A_DISTANCE` / `CONTAINS` / `COMPLETELY_CONTAINS` / `CROSSES` / `WITHIN` / `ARE_IDENTICAL_TO` / `BOUNDARY_TOUCHES`。
+- `overlap_type`：常用 `INTERSECT` / `WITHIN_A_DISTANCE`（其余关系在不同几何组合下可能无效）。
 - `select_features`：选择要素。
 - `search_distance`（可选）：搜索距离。
-- `selection_type`：同 `SelectLayerByAttribute`。
+- `selection_type`：常用 `NEW_SELECTION` / `ADD_TO_SELECTION` / `REMOVE_FROM_SELECTION` / `SUBSET_SELECTION` / `SWITCH_SELECTION`。
 - `invert Spatial`（可选）：是否反转选择。
 
 ### 返回值

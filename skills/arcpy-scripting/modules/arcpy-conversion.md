@@ -9,19 +9,15 @@
 - `FeatureClassToFeatureClass`
 - `TableToTable`
 - `ExportFeatures`
-- `ExportRaster`
-- `FeatureToPoint`
-- `FeatureToLine`
-- `FeatureToPolygon`
+- `FeatureToPoint`（`arcpy.management`）
+- `FeatureToLine`（`arcpy.management`）
+- `FeatureToPolygon`（`arcpy.management`）
 - `RasterToPolygon`
 - `PolygonToRaster`
 - `RasterToOtherFormat`
-- `ShapefileToFeatureClass`
-- `JSONToFeatureClass`
-- `FeatureClassToJSON`
-- `GeoJSONToFeatures`
-- `FeaturesToGeoJSON`
-- `ValidateDataset`
+- `FeatureClassToShapefile`
+- `JSONToFeatures`
+- `FeaturesToJSON`
 
 ## 工具 1：`FeatureClassToFeatureClass`
 
@@ -92,27 +88,7 @@ out_table = arcpy.conversion.TableToTable(in_table, out_gdb, "poi_tbl")[0]
 result = arcpy.conversion.ExportFeatures(fc, out_fc, sort_field="NAME A")
 ```
 
-## 工具 4：`ExportRaster`
-
-### 参数
-
-- `in_raster`：输入栅格。
-- `out_raster_dataset`：输出栅格路径。
-- `configuration_keyword`（可选）：存储配置。
-- `options`（可选）：附加选项。
-- `maintenance`（可选）：维护选项。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-### 示例
-
-```python
-arcpy.conversion.ExportRaster(out_raster, output_path)
-```
-
-## 工具 5：`FeatureToPoint`
+## 工具 4：`FeatureToPoint`（`arcpy.management`）
 
 ### 参数
 
@@ -127,17 +103,16 @@ arcpy.conversion.ExportRaster(out_raster, output_path)
 ### 示例
 
 ```python
-result = arcpy.conversion.FeatureToPoint(in_fc, out_fc, "INSIDE")[0]
+result = arcpy.management.FeatureToPoint(in_fc, out_fc, "INSIDE")[0]
 ```
 
-## 工具 6：`FeatureToLine`
+## 工具 5：`FeatureToLine`（`arcpy.management`）
 
 ### 参数
 
 - `in_features`：输入要素。
 - `out_feature_class`：输出线要素。
-- `line_field`（可选）：线拆分字段（如按要素 ID 生成独立线）。
-- `join_attributes`（可选）：属性传递策略。
+- `attributes`（可选）：`ATTRIBUTES` / `NO_ATTRIBUTES`。
 
 ### 返回值
 
@@ -146,10 +121,10 @@ result = arcpy.conversion.FeatureToPoint(in_fc, out_fc, "INSIDE")[0]
 ### 示例
 
 ```python
-arcpy.conversion.FeatureToLine(boundary_fc, out_line_fc, "ZONE_ID")
+arcpy.management.FeatureToLine(boundary_fc, out_line_fc, "ATTRIBUTES")
 ```
 
-## 工具 7：`FeatureToPolygon`
+## 工具 6：`FeatureToPolygon`（`arcpy.management`）
 
 ### 参数
 
@@ -163,7 +138,7 @@ arcpy.conversion.FeatureToLine(boundary_fc, out_line_fc, "ZONE_ID")
 
 - 返回 `arcpy.Result`。
 
-## 工具 8：`RasterToPolygon`
+## 工具 7：`RasterToPolygon`
 
 ### 参数
 
@@ -171,7 +146,7 @@ arcpy.conversion.FeatureToLine(boundary_fc, out_line_fc, "ZONE_ID")
 - `out_polygon_features`：输出面要素。
 - `simplify`（可选）：`SIMPLIFY` / `NO_SIMPLIFY`。`SIMPLIFY` 会平滑边界。
 - `raster_field`（可选）：值字段（默认 `Value`）。
-- `create_multipart_features`（可选）：`MULTIPLE_PART` / `SINGLE_PART`。
+- `create_multipart_features`（可选）：`MULTIPLE_OUTER_PART` / `SINGLE_OUTER_PART`。
 - `max_vertices_per_feature`（可选）：单要素最大顶点数。
 
 ### 返回值
@@ -183,21 +158,21 @@ arcpy.conversion.FeatureToLine(boundary_fc, out_line_fc, "ZONE_ID")
 ```python
 result = arcpy.conversion.RasterToPolygon(
     in_raster, out_fc, simplify="SIMPLIFY",
-    raster_field="LANDCOVER", create_multipart_features="MULTIPLE_PART"
+    raster_field="LANDCOVER", create_multipart_features="MULTIPLE_OUTER_PART"
 )
 ```
 
-## 工具 9：`PolygonToRaster`
+## 工具 8：`PolygonToRaster`
 
 ### 参数
 
 - `in_features`：输入面要素。
 - `value_field`：栅格值字段（默认 `OID`）。
 - `out_rasterdataset`：输出栅格路径。
-- `cell_assignment`（可选）：`CELL_CENTER` / `MAX_AREA` / `MAX_COMBINED_AREA`。
+- `cell_assignment`（可选）：`CELL_CENTER` / `MAXIMUM_AREA` / `MAXIMUM_COMBINED_AREA`。
 - `cellsize`（可选）：像元大小。
 - `priority_field`（可选）：优先级字段。
-- `build_rat`（可选）：`BUILD_RAT` / `NO_BUILD_RAT`（栅格属性表）。
+- `build_rat`（可选）：`BUILD` / `DO_NOT_BUILD`（栅格属性表）。
 
 ### 返回值
 
@@ -208,11 +183,11 @@ result = arcpy.conversion.RasterToPolygon(
 ```python
 result = arcpy.conversion.PolygonToRaster(
     zone_fc, "ZONE_CODE", out_raster,
-    cellsize=30, build_rat="BUILD_RAT"
+    cellsize=30, build_rat="BUILD"
 )
 ```
 
-## 工具 10：`RasterToOtherFormat`
+## 工具 9：`RasterToOtherFormat`
 
 ### 参数
 
@@ -221,8 +196,6 @@ result = arcpy.conversion.PolygonToRaster(
 - `raster_format`：目标格式（如 `JPEG` / `TIFF` / `PNG` / `BMP` / `GIF`）。
 - `convert_single_band`（可选）：是否转换为单波段。
 - `color_mode`（可选）：颜色模式（`CMA_AUTO` / `CMA_MATCH` 等）。
-- `compression`（可选）：压缩方式。
-- `jpeg_quality`（可选）：JPEG 质量（1-100）。
 
 ### 返回值
 
@@ -231,31 +204,26 @@ result = arcpy.conversion.PolygonToRaster(
 ### 示例
 
 ```python
-arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG", compression="LZW")
+arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG")
 ```
 
-## 工具 11：`ShapefileToFeatureClass`
+## 工具 10：`FeatureClassToShapefile`
 
 ### 参数
 
-- `Input_Files`：输入 shp 文件或文件夹。
-- `Output_Location`：输出位置。
-- `out_name`（可选）：输出名称（批量时忽略）。
-- `config_keyword`（可选）：存储配置。
-- `outSpatial_Reference`（可选）：输出空间参考。
+- `Input_Features`：输入要素类（单个或多个）。
+- `Output_Folder`：输出 shp 文件夹。
 
 ### 返回值
 
 - 返回 `arcpy.Result`。
 
-## 工具 12：`JSONToFeatureClass`
+## 工具 11：`JSONToFeatures`
 
 ### 参数
 
 - `in_json_file`：输入 GeoJSON 文件路径。
-- `out_feature_class`：输出要素类路径。
-- `geometry_type`（可选）：`POINT` / `MULTIPOINT` / `POLYLINE` / `POLYGON`（通常从 JSON 自动推断）。
-- `spatial_reference`（可选）：空间参考。
+- `out_features`：输出要素类路径。
 
 ### 返回值
 
@@ -264,17 +232,15 @@ arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG", compression=
 ### 示例
 
 ```python
-arcpy.conversion.JSONToFeatureClass(geojson_path, out_fc, spatial_reference=4326)
+arcpy.conversion.JSONToFeatures(json_path, out_fc)
 ```
 
-## 工具 13：`FeatureClassToJSON`
+## 工具 12：`FeaturesToJSON`
 
 ### 参数
 
-- `in_features`：输入要素类。
+- `in_features`：输入要素类或图层。
 - `out_json_file`：输出 JSON 文件路径。
-- `include_fields`（可选）：是否包含字段。
-- `format_coords`（可选）：坐标格式（如 `-122.0, 37.0`）。
 - `geoJSON`（可选）：是否输出 GeoJSON 格式。
 
 ### 返回值
@@ -284,49 +250,7 @@ arcpy.conversion.JSONToFeatureClass(geojson_path, out_fc, spatial_reference=4326
 ### 示例
 
 ```python
-arcpy.conversion.FeatureClassToJSON(fc, out_json, geoJSON="GEOJSON")
-```
-
-## 工具 14：`GeoJSONToFeatures`
-
-### 参数
-
-- `in_json_file`：输入 GeoJSON 文件路径。
-- `out_features`：输出要素类路径。
-- `geometry_type`（可选）：几何类型约束。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-## 工具 15：`FeaturesToGeoJSON`
-
-### 参数
-
-- `in_features`：输入要素类。
-- `out_json_file`：输出 GeoJSON 文件路径。
-- `geoJSON`（可选）：是否输出标准 GeoJSON（替代 Esri JSON）。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-## 工具 16：`ValidateDataset`
-
-### 参数
-
-- `in_dataset`：待验证数据集。
-- `in_tolerance_value`（可选）：容差值。
-
-### 返回值
-
-- 返回 `arcpy.Result`，`result[0]` 为 `Boolean`（验证通过/失败）。
-
-### 示例
-
-```python
-if not arcpy.conversion.ValidateDataset(in_fc):
-    print("Dataset invalid")
+arcpy.conversion.FeaturesToJSON(fc, out_json, geoJSON="GEOJSON")
 ```
 
 ## 常见错误与排查
@@ -339,7 +263,7 @@ if not arcpy.conversion.ValidateDataset(in_fc):
 - `RasterToPolygon` 的 `simplify="SIMPLIFY"` 在边界复杂时可能导致面粘连。
 - `PolygonToRaster` 未设置 `build_rat="BUILD_RAT"` 导致无法进行像元统计查询。
 - JSON/GeoJSON 转换时坐标系未统一导致位置偏移。
-- `FeatureToLine` 的 `line_field` 为空时所有要素合并为单一线。
+- `FeatureToLine` 建议显式设置 `attributes`，控制属性是否传递到输出线。
 
 ## 最小可运行骨架
 

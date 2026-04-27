@@ -244,9 +244,9 @@ class TestCreateExportFormat:
         out_pdf = tmp_path / "test.pdf"
         pdf_format = arcpy.mp.CreateExportFormat("PDF", str(out_pdf))
         assert hasattr(pdf_format, "resolution")
-        assert hasattr(pdf_format, "compress_pdf")
+        assert hasattr(pdf_format, "compressVectorGraphics")
         pdf_format.resolution = 300
-        pdf_format.compress_pdf = True
+        pdf_format.compressVectorGraphics = True
 
 
 # ---------------------------------------------------------------------------

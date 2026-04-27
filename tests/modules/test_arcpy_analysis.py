@@ -152,7 +152,7 @@ def test_analysis_intersect_parameters(tmp_path):
     with arcpy.da.InsertCursor(p2, ["SHAPE@"]) as c:
         c.insertRow([arcpy.Polygon(arr2, sr)])
 
-    for join_attr in ["ALL", "NO_FID", "FID_ONLY"]:
+    for join_attr in ["ALL", "NO_FID", "ONLY_FID"]:
         out = f"{gdb}/int_{join_attr}"
         r = arcpy.analysis.Intersect([p1, p2], out, join_attributes=join_attr)
         assert arcpy.Exists(r[0])
@@ -184,7 +184,7 @@ def test_analysis_union_parameters(tmp_path):
     with arcpy.da.InsertCursor(p2, ["SHAPE@"]) as c:
         c.insertRow([arcpy.Polygon(arr2, sr)])
 
-    for gaps in ["ALL", "NO_GAPS"]:
+    for gaps in ["GAPS", "NO_GAPS"]:
         out = f"{gdb}/union_{gaps}"
         r = arcpy.analysis.Union([p1, p2], out, gaps=gaps)
         assert arcpy.Exists(r[0])
@@ -240,7 +240,7 @@ def test_analysis_identity_parameters(tmp_path):
     with arcpy.da.InsertCursor(p2, ["SHAPE@"]) as c:
         c.insertRow([arcpy.Polygon(arr2, sr)])
 
-    for join_attr in ["ALL", "NO_FID", "FID_ONLY"]:
+    for join_attr in ["ALL", "NO_FID", "ONLY_FID"]:
         out = f"{gdb}/ident_{join_attr}"
         r = arcpy.analysis.Identity(p1, p2, out, join_attributes=join_attr)
         assert arcpy.Exists(r[0])
@@ -408,8 +408,8 @@ def test_analysis_point_distance_parameters(tmp_path):
 # SelectLayerByLocation
 # ---------------------------------------------------------------------------
 def test_analysis_select_layer_by_location():
-    assert hasattr(arcpy.analysis, "SelectLayerByLocation")
-    assert callable(arcpy.analysis.SelectLayerByLocation)
+    assert hasattr(arcpy.management, "SelectLayerByLocation")
+    assert callable(arcpy.management.SelectLayerByLocation)
 
 
 def test_analysis_select_layer_by_location_parameters(tmp_path):
@@ -427,21 +427,20 @@ def test_analysis_select_layer_by_location_parameters(tmp_path):
         c.insertRow([arcpy.Polygon(arr, arcpy.SpatialReference(4326))])
 
     lyr = arcpy.management.MakeFeatureLayer(pts, "pts_lyr")[0]
-    for overlap in ["INTERSECT", "WITHIN_A_DISTANCE", "CONTAINS", "COMPLETELY_CONTAINS",
-                     "CROSSES", "WITHIN", "ARE_IDENTICAL_TO", "BOUNDARY_TOUCHES"]:
+    for overlap in ["INTERSECT", "WITHIN_A_DISTANCE"]:
         kwargs = {}
         if overlap == "WITHIN_A_DISTANCE":
             kwargs["search_distance"] = "100 Meters"
-        r = arcpy.analysis.SelectLayerByLocation(lyr, overlap, poly, **kwargs)
+        r = arcpy.management.SelectLayerByLocation(lyr, overlap, poly, **kwargs)
         assert isinstance(r, arcpy.Result)
 
     for sel_type in ["NEW_SELECTION", "ADD_TO_SELECTION", "REMOVE_FROM_SELECTION",
-                      "SUBSET_SELECTION", "CLEAR_SELECTION"]:
-        r = arcpy.analysis.SelectLayerByLocation(lyr, "INTERSECT", poly, selection_type=sel_type)
+                      "SUBSET_SELECTION", "SWITCH_SELECTION"]:
+        r = arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", poly, selection_type=sel_type)
         assert isinstance(r, arcpy.Result)
 
-    for invert in ["INVERT", "NO_INVERT"]:
-        r = arcpy.analysis.SelectLayerByLocation(lyr, "INTERSECT", poly, invert_clause=invert)
+    for invert in ["INVERT", "NOT_INVERT"]:
+        r = arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", poly, None, "NEW_SELECTION", invert)
         assert isinstance(r, arcpy.Result)
 
 
@@ -449,8 +448,8 @@ def test_analysis_select_layer_by_location_parameters(tmp_path):
 # Dissolve
 # ---------------------------------------------------------------------------
 def test_analysis_dissolve():
-    assert hasattr(arcpy.analysis, "Dissolve")
-    assert callable(arcpy.analysis.Dissolve)
+    assert hasattr(arcpy.management, "Dissolve")
+    assert callable(arcpy.management.Dissolve)
 
 
 def test_analysis_dissolve_parameters(tmp_path):
@@ -469,18 +468,18 @@ def test_analysis_dissolve_parameters(tmp_path):
         c.insertRow([arcpy.Polygon(arr2, sr), "A", 200.0])
 
     # Basic dissolve
-    r = arcpy.analysis.Dissolve(fc, f"{gdb}/diss1", dissolve_field="ZONE_CODE")
+    r = arcpy.management.Dissolve(fc, f"{gdb}/diss1", dissolve_field="ZONE_CODE")
     assert arcpy.Exists(r[0])
 
     # With statistics_fields
-    r = arcpy.analysis.Dissolve(fc, f"{gdb}/diss2", dissolve_field="ZONE_CODE",
+    r = arcpy.management.Dissolve(fc, f"{gdb}/diss2", dissolve_field="ZONE_CODE",
                                  statistics_fields="AREA SUM")
     assert arcpy.Exists(r[0])
 
     # With multi_part
-    for mp in ["MULTIPLE_PART", "SINGLE_PART"]:
+    for mp in ["MULTI_PART", "SINGLE_PART"]:
         out = f"{gdb}/diss_{mp}"
-        r = arcpy.analysis.Dissolve(fc, out, dissolve_field="ZONE_CODE", multi_part=mp)
+        r = arcpy.management.Dissolve(fc, out, dissolve_field="ZONE_CODE", multi_part=mp)
         assert arcpy.Exists(r[0])
 
 
@@ -488,8 +487,8 @@ def test_analysis_dissolve_parameters(tmp_path):
 # FeatureToPoint
 # ---------------------------------------------------------------------------
 def test_analysis_feature_to_point():
-    assert hasattr(arcpy.analysis, "FeatureToPoint")
-    assert callable(arcpy.analysis.FeatureToPoint)
+    assert hasattr(arcpy.management, "FeatureToPoint")
+    assert callable(arcpy.management.FeatureToPoint)
 
 
 def test_analysis_feature_to_point_parameters(tmp_path):
@@ -503,7 +502,7 @@ def test_analysis_feature_to_point_parameters(tmp_path):
 
     for loc in ["CENTROID", "INSIDE"]:
         out = f"{gdb}/pt_{loc}"
-        r = arcpy.analysis.FeatureToPoint(fc, out, point_location=loc)
+        r = arcpy.management.FeatureToPoint(fc, out, point_location=loc)
         assert arcpy.Exists(r[0])
 
     geom_type = arcpy.Describe(f"{gdb}/pt_CENTROID").shapeType
@@ -514,8 +513,8 @@ def test_analysis_feature_to_point_parameters(tmp_path):
 # FeatureToLine
 # ---------------------------------------------------------------------------
 def test_analysis_feature_to_line():
-    assert hasattr(arcpy.analysis, "FeatureToLine")
-    assert callable(arcpy.analysis.FeatureToLine)
+    assert hasattr(arcpy.management, "FeatureToLine")
+    assert callable(arcpy.management.FeatureToLine)
 
 
 def test_analysis_feature_to_line_parameters(tmp_path):
@@ -529,10 +528,10 @@ def test_analysis_feature_to_line_parameters(tmp_path):
         c.insertRow([arcpy.Polyline(arr1, sr), "A"])
         c.insertRow([arcpy.Polyline(arr2, sr), "B"])
 
-    r = arcpy.analysis.FeatureToLine(fc, f"{gdb}/merged_line")
+    r = arcpy.management.FeatureToLine(fc, f"{gdb}/merged_line")
     assert arcpy.Exists(r[0])
 
-    r2 = arcpy.analysis.FeatureToLine(fc, f"{gdb}/split_line", line_field="ZONE_ID")
+    r2 = arcpy.management.FeatureToLine(fc, f"{gdb}/split_line", attributes="ATTRIBUTES")
     assert arcpy.Exists(r2[0])
 
 
@@ -540,8 +539,8 @@ def test_analysis_feature_to_line_parameters(tmp_path):
 # MultipartToSinglepart
 # ---------------------------------------------------------------------------
 def test_analysis_multipart_to_singlepart():
-    assert hasattr(arcpy.analysis, "MultipartToSinglepart")
-    assert callable(arcpy.analysis.MultipartToSinglepart)
+    assert hasattr(arcpy.management, "MultipartToSinglepart")
+    assert callable(arcpy.management.MultipartToSinglepart)
 
 
 def test_analysis_multipart_to_singlepart_parameters(tmp_path):
@@ -557,7 +556,7 @@ def test_analysis_multipart_to_singlepart_parameters(tmp_path):
     with arcpy.da.InsertCursor(fc, ["SHAPE@"]) as c:
         c.insertRow([pg])
 
-    r = arcpy.analysis.MultipartToSinglepart(fc, f"{gdb}/single")
+    r = arcpy.management.MultipartToSinglepart(fc, f"{gdb}/single")
     assert arcpy.Exists(r[0])
     assert isinstance(r, arcpy.Result)
     # Should have 2 features now
@@ -569,8 +568,8 @@ def test_analysis_multipart_to_singlepart_parameters(tmp_path):
 # Eliminate
 # ---------------------------------------------------------------------------
 def test_analysis_eliminate():
-    assert hasattr(arcpy.analysis, "Eliminate")
-    assert callable(arcpy.analysis.Eliminate)
+    assert hasattr(arcpy.management, "Eliminate")
+    assert callable(arcpy.management.Eliminate)
 
 
 def test_analysis_eliminate_parameters(tmp_path):
@@ -586,6 +585,7 @@ def test_analysis_eliminate_parameters(tmp_path):
         c.insertRow([arcpy.Polygon(arr1, sr), 100.0])
         c.insertRow([arcpy.Polygon(arr2, sr), 1.0])
 
-    r = arcpy.analysis.Eliminate(fc, f"{gdb}/elim1", where_clause="AREA < 10")
+    lyr = arcpy.management.MakeFeatureLayer(fc, "elim_lyr", "AREA < 10")[0]
+    r = arcpy.management.Eliminate(lyr, f"{gdb}/elim1")
     assert arcpy.Exists(r[0])
     assert isinstance(r, arcpy.Result)

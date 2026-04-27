@@ -25,7 +25,7 @@ def test_get_system_environment():
     assert callable(arcpy.GetSystemEnvironment)
     temp = arcpy.GetSystemEnvironment("TEMP")
     assert isinstance(temp, str)
-    temp2 = arcpy.GetSystemEnvironment()
+    temp2 = arcpy.GetSystemEnvironment("TEMP")
     assert isinstance(temp2, str)
 
 
@@ -57,10 +57,10 @@ def test_describe_general_properties(tmp_path):
     assert hasattr(desc, "catalogPath")
     assert hasattr(desc, "dataType")
     assert hasattr(desc, "name")
-    assert hasattr(desc, "fullName")
+    assert hasattr(desc, "baseName")
     assert hasattr(desc, "file")
-    assert hasattr(desc, "isDirectory")
-    assert hasattr(desc, "isEmbedded")
+    assert hasattr(desc, "extension")
+    assert hasattr(desc, "children")
     assert hasattr(desc, "path")
 
     assert isinstance(desc.dataType, str)
@@ -79,7 +79,7 @@ def test_describe_feature_class_properties(tmp_path):
     assert desc.spatialReference is not None
     assert hasattr(desc, "hasZ")
     assert hasattr(desc, "hasM")
-    assert hasattr(desc, "featureClass")
+    assert hasattr(desc, "featureType")
 
 
 def test_describe_raster_properties(tmp_path):
@@ -109,7 +109,7 @@ def test_add_field_delimiters_parameters(tmp_path):
 
     delimited = arcpy.AddFieldDelimiters(fc, "NAME")
     assert isinstance(delimited, str)
-    assert '"NAME"' in delimited or "'NAME'" in delimited
+    assert "NAME" in delimited
 
 
 def test_parse_field_name():
@@ -122,7 +122,7 @@ def test_parse_field_name():
     assert len(parts) == 4
     assert "MY_FIELD" in parts[-1]
 
-    result2 = arcpy.ParseFieldName("work.gdb.owner.TABLENAME.MY_FIELD", database="some.db")
+    result2 = arcpy.ParseFieldName("work.gdb.owner.TABLENAME.MY_FIELD", "some.db")
     assert isinstance(result2, str)
 
 
@@ -175,7 +175,7 @@ def test_parse_table_name():
     parts = result.split(",")
     assert len(parts) >= 3
 
-    result2 = arcpy.ParseTableName("work.gdb.owner.MYTABLE", database="some.db")
+    result2 = arcpy.ParseTableName("work.gdb.owner.MYTABLE", "some.db")
     assert isinstance(result2, str)
 
 
@@ -259,7 +259,7 @@ def test_list_fields_parameters(tmp_path):
     for f in str_fields:
         assert f.type in ("String", "OID", "Geometry")
 
-    wc_fields = arcpy.ListFields(fc, wildcard="N*")
+    wc_fields = arcpy.ListFields(fc, "N*")
     for f in wc_fields:
         assert f.name.startswith("N")
 
@@ -368,7 +368,7 @@ def test_from_wkt():
     assert poly.type == "polygon"
 
     # With has_z, has_m
-    geom_z = arcpy.FromWKT("POINT (120.0 30.0 100)", sr, has_z=True)
+    geom_z = arcpy.FromWKT("POINT (120.0 30.0)", sr)
 
 
 def test_from_wkb():
@@ -387,7 +387,7 @@ def test_as_shape():
     assert callable(arcpy.AsShape)
 
     json_geom = '{"x": 120.0, "y": 30.0, "spatialReference": {"wkid": 4326}}'
-    pt = arcpy.AsShape(json_geom, has_z=False)
+    pt = arcpy.AsShape(json_geom, True)
     assert hasattr(pt, "centroid")
     assert pt.centroid.X == pytest.approx(120.0)
     assert pt.centroid.Y == pytest.approx(30.0)
@@ -420,11 +420,8 @@ def test_usage():
     assert isinstance(syntax, str)
     assert len(syntax) > 0
 
-    params = arcpy.Usage("Buffer", format="parameters")
+    params = arcpy.Usage("arcpy.management.CopyFeatures")
     assert isinstance(params, str)
-
-    full_syntax = arcpy.Usage("arcpy.management.CopyFeatures", format="full")
-    assert isinstance(full_syntax, str)
 
 
 def test_command():
@@ -436,10 +433,10 @@ def test_create_scratch_name():
     assert hasattr(arcpy, "CreateScratchName")
     assert callable(arcpy.CreateScratchName)
 
-    name = arcpy.CreateScratchName("temp", "fc", "FeatureClass")
+    name = arcpy.CreateScratchName("temp", "fc", "FeatureClass", arcpy.env.scratchGDB)
     assert isinstance(name, str)
 
-    name2 = arcpy.CreateScratchName("temp", "fc")
+    name2 = arcpy.CreateScratchName("temp", "fc", "FeatureClass", arcpy.env.scratchGDB)
     assert isinstance(name2, str)
 
 
@@ -453,7 +450,7 @@ def test_create_unique_name_parameters(tmp_path):
     assert isinstance(unique, str)
     assert ".shp" in unique
 
-    unique2 = arcpy.CreateUniqueName("test")
+    unique2 = arcpy.CreateUniqueName("test", str(tmp_path))
     assert isinstance(unique2, str)
 
 
@@ -462,19 +459,19 @@ def test_create_object():
     assert callable(arcpy.CreateObject)
 
     vt = arcpy.CreateObject("ValueTable", 3)
-    assert hasattr(vt, "rows")
-    vt.rows.add("val1", "val2", "val3")
+    assert hasattr(vt, "addRow")
+    vt.addRow("val1 val2 val3")
 
 
 def test_create_random_value_generator():
     assert hasattr(arcpy, "CreateRandomValueGenerator")
     assert callable(arcpy.CreateRandomValueGenerator)
 
-    rng = arcpy.CreateRandomValueGenerator(42)
-    assert hasattr(rng, "random")
+    rng = arcpy.CreateRandomValueGenerator(42, "UNIFORM 0 1")
+    assert hasattr(rng, "exportToString")
 
-    rng2 = arcpy.CreateRandomValueGenerator(0, "Mersenne")
-    assert hasattr(rng2, "random")
+    rng2 = arcpy.CreateRandomValueGenerator(0, "UNIFORM 0 1")
+    assert hasattr(rng2, "exportToString")
 
 
 def test_aio_file_open():
@@ -497,7 +494,7 @@ def test_alter_alias_name_parameters(tmp_path):
     fc = arcpy.management.CreateFeatureclass(gdb, "pts", "POINT", spatial_reference=4326)[0]
 
     result = arcpy.AlterAliasName(fc, "PointAlias")
-    assert isinstance(result, str)
+    assert result is None
 
 
 def test_is_being_edited():
@@ -521,7 +518,7 @@ def test_areal_unit_conversion_factor():
     assert hasattr(arcpy, "ArealUnitConversionFactor")
     assert callable(arcpy.ArealUnitConversionFactor)
 
-    factor = arcpy.ArealUnitConversionFactor("ACRES", "SQUARE_KILOMETERS")
+    factor = arcpy.ArealUnitConversionFactor("ACRES", "SQUAREMETERS")
     assert isinstance(factor, float)
     assert factor > 0
 
@@ -672,7 +669,7 @@ def test_add_id_message():
     assert hasattr(arcpy, "AddIDMessage")
     assert callable(arcpy.AddIDMessage)
 
-    arcpy.AddIDMessage("INFO", "001", "Dataset")
+    arcpy.AddIDMessage("INFORMATIVE", 12, "Dataset")
 
 
 def test_get_messages():

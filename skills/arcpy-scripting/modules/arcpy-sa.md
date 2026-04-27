@@ -38,7 +38,6 @@
 
 - `FocalStatistics`
 - `BlockStatistics`
-- `NeighborhoodStatistics`
 
 ### 距离分析
 
@@ -50,7 +49,6 @@
 - `EucDirection`
 - `PathDistance`
 - `PathAllocation`
-- `PathDirection`
 
 ### 表面分析
 
@@ -73,7 +71,6 @@
 ### 局部/全局统计
 
 - `CellStatistics`
-- `LocalSum`, `LocalMean`, `LocalMax`, `LocalMin`
 - `ZonalStatistics`
 - `ZonalGeometry`
 - `ZonalHistogram`
@@ -81,14 +78,13 @@
 ### 插值
 
 - `Kriging`
-- `IDW`
 - `NaturalNeighbor`
 - `Trend`
 - `Spline`
 
 ### 其他
 
-- `.flow()`（流向分析）
+- `FlowDirection`（流向分析）
 - `Watershed`（流域分析）
 - `Snake`（图像 Snake 轮廓）
 
@@ -173,7 +169,7 @@ remap = arcpy.sa.RemapValue([[0, 1], [1, 1], [2, 2], [255, "NODATA"]])
 
 - `in_raster`：输入栅格。
 - `neighborhood`：邻域形状（`NbrRectangle(3, 3)` / `NbrCircle(3, "CELL")` / `NbrWedge(5, 45, 90)` / `NbrAnnulus(3, 5)` 等）。
-- `statistics_type`：`MEAN` / `SUM` / `STD` / `MIN` / `MAX` / `RANGE` / `MEDIAN` / `MAJORITY` / `MINORITY` / `VARIETY`。
+- `statistics_type`：`MEAN` / `SUM` / `STD` / `MINIMUM` / `MAXIMUM` / `RANGE` / `MEDIAN` / `MAJORITY` / `MINORITY` / `VARIETY`。
 - `ignore_nodata`（可选）：`DATA` / `NODATA`。
 
 ### 返回值
@@ -196,7 +192,7 @@ out_stats = arcpy.sa.FocalStatistics(in_dem, nbr_rect, "MEAN", "DATA")
 ### 示例
 
 ```python
-nbr = arcpy.sa.NbrBlock(4, 4, "CELL")
+nbr = arcpy.sa.NbrRectangle(4, 4, "CELL")
 out_block = arcpy.sa.BlockStatistics(in_raster, nbr, "SUM")
 ```
 
@@ -310,9 +306,8 @@ cost_path = arcpy.sa.CostPath(to_point, cost_dist, backlink)
 - `in_source_data`：源数据。
 - `out_distance_raster`（可选）：输出距离栅格。
 - `cell_size`（可选）：像元大小。
-- `max_distance`（可选）：最大距离。
+- `maximum_distance`（可选）：最大距离。
 - `out_direction_raster`（可选）：方向栅格。
-- `distance_method`（可选）：`PLANAR` / `GEODESIC`。
 
 ### 返回值
 
@@ -321,9 +316,11 @@ cost_path = arcpy.sa.CostPath(to_point, cost_dist, backlink)
 ### 示例
 
 ```python
-euc_dist = arcpy.sa.EucDistance(source_points, max_distance=1000)
+euc_dist = arcpy.sa.EucDistance(source_points, maximum_distance=1000)
 euc_alloc = arcpy.sa.EucAllocation(source_points)
 ```
+
+在地理坐标系或范围参数不匹配时，`EucDistance` 可能报范围无效；建议优先使用投影坐标系并显式设置 `cell_size`。
 
 ## 函数 13：`ZonalStatistics`
 
@@ -332,7 +329,7 @@ euc_alloc = arcpy.sa.EucAllocation(source_points)
 - `in_zone_data`：区域数据（栅格或要素）。
 - `zone_field`：区域字段。
 - `in_value_raster`：值栅格。
-- `statistics_type`（可选）：`SUM` / `MEAN` / `MAX` / `MIN` / `RANGE` / `STD` / `VARIETY` / `MAJORITY` / `MINORITY` / `MEDIAN`。
+- `statistics_type`（可选）：`SUM` / `MEAN` / `MAXIMUM` / `MINIMUM` / `RANGE` / `STD` / `VARIETY` / `MAJORITY` / `MINORITY` / `MEDIAN`。
 - `ignore_nodata`（可选）：`DATA` / `NODATA`。
 - `process_as_multidimensional`（可选）：是否处理多维。
 - `percentile_values`（可选）：百分位数（如 `[25, 50, 75]`）。
@@ -354,7 +351,7 @@ zone_stats = arcpy.sa.ZonalStatistics(zone_fc, "ZONE_ID", dem, "MEAN", "DATA")
 
 - `in_zone_data`：区域数据。
 - `zone_field`：区域字段。
-- `geometry_type`：`AREA` / `PERIMETER` / `AREA_AND_PERIMETER`。
+- `geometry_type`：`AREA` / `PERIMETER` / `THICKNESS` / `CENTROID`。
 
 ### 返回值
 
@@ -365,7 +362,7 @@ zone_stats = arcpy.sa.ZonalStatistics(zone_fc, "ZONE_ID", dem, "MEAN", "DATA")
 ### 参数
 
 - `in_rasters`：输入栅格列表或列表。
-- `statistics_type`：`SUM` / `MEAN` / `MEDIAN` / `MIN` / `MAX` / `RANGE` / `STD` / `VARIETY` / `MAJORITY` / `MINORITY` / `COUNT`。
+- `statistics_type`：`SUM` / `MEAN` / `MEDIAN` / `MINIMUM` / `MAXIMUM` / `RANGE` / `STD` / `VARIETY` / `MAJORITY` / `MINORITY` / `PERCENTILE`。
 - `ignore_nodata`（可选）：是否忽略 NoData。
 
 ### 返回值
@@ -393,7 +390,7 @@ sum_r = arcpy.sa.CellStatistics([dem1, dem2, dem3], "SUM", "DATA")
 ### 示例
 
 ```python
-fdir = arcpy.sa.flow(in_dem)
+fdir = arcpy.sa.FlowDirection(in_dem)
 ws = arcpy.sa.Watershed(fdir, pour_points)
 ```
 
