@@ -7,7 +7,7 @@ import pytest
 
 from .conftest import run_example
 
-arcpy = pytest.importorskip("arcpy")
+import arcpy
 
 
 def _write_sample_csv(path: Path) -> None:

@@ -12,7 +12,6 @@
 - `Layout`
 - `MapFrame`、`MapSeries`
 - `listMaps`、`listLayouts`、`listLayers`
-- `updateConnectionProperties`
 - `exportToPDF`、`exportToPNG`、`exportToAIX`
 - `createExportFormat` / `CreateExportOptions`
 - `save`、`saveACopy`
@@ -96,8 +95,6 @@ aprx.save()
 ### 属性
 
 - `name`：地图名称。
-- `mapSeries`：关联的地图系列（如有）。
-- `description`：地图描述。
 
 ## 对象：`MapView`
 
@@ -121,15 +118,12 @@ lyrx = arcpy.mp.LayerFile(r"D:\layers\roads.lyrx")
 lyr = m.listLayers("roads*")[0]
 ```
 
-### 重要方法（Layer）
+### 重要属性（Layer）
 
-- `replaceDataSource(target_table, workspace_type, {validate})`：替换数据源。
-- `updateConnectionProperties(current, new, {auto_join})`：更新连接。
-- `findAndReplaceWorkspacePath(old_path, new_path, {validate})`：更新工作空间路径。
 - `isBroken`：属性，返回图层数据源是否断裂。
 - `longName`：完整图层名（含组）。
-- `shortName`：简短图层名。
 - `visible`：是否可见。
+- `connectionProperties`：图层当前连接信息字典。
 
 ### 重要方法（LayerFile）
 
@@ -181,8 +175,6 @@ layout.export(pdf_format)
 - `camera`：返回 `Camera` 对象，可设置 `latitude`、`longitude`、`scale`、`heading`、`pitch`、`roll`。
 - `zoomToAllLayers()`：缩放至所有图层。
 - `panToExtent(extent)`：平移。
-- `getLayerVisibility()`：获取图层可见性。
-- `setLayerVisibility(layers, visibility)`：设置图层可见性。
 
 ## 对象：`MapSeries`
 
@@ -230,37 +222,37 @@ for bm in bms.bookmarks:
 
 ## 数据源修复模式
 
-### 模式 1：按路径替换
+### 模式 1：检测断裂图层
 
 ```python
 aprx = arcpy.mp.ArcGISProject(project_path)
 for m in aprx.listMaps():
     for lyr in m.listLayers():
         if lyr.isBroken:
-            old_ds = lyr.connectionProperties.get("workspaceFactory", "")
-            if old_ds.startswith("Database"):
-                lyr.findAndReplaceWorkspacePath(old_path, new_path, validate=True)
+            conn = lyr.connectionProperties
+            old_path = conn.get("database", "")
+            print(f"断裂图层: {lyr.longName}, 原路径: {old_path}")
 ```
 
-### 模式 2：按连接信息字典
+### 模式 2：批量更新数据库连接
 
 ```python
-new_conn = {"database": new_gdb_path}
-for m in aprx.listMaps():
-    for lyr in m.listLayers():
-        lyr.updateConnectionProperties(old_gdb_path, new_conn, auto_join=True)
+aprx = arcpy.mp.ArcGISProject(project_path)
+for db in aprx.databases:
+    if ".gdb" in db.get("databasePath", ""):
+        db["databasePath"] = db["databasePath"].replace(old_gdb, new_gdb)
+aprx.updateDatabases(aprx.databases)
+aprx.save()
 ```
 
-### 模式 3：高级参数
+### 模式 3：批量更新文件夹连接
 
 ```python
-changed = aprx.updateConnectionProperties(
-    {"workspaceFactory": "FileGDB", "workspace": old_gdb},
-    {"workspaceFactory": "FileGDB", "workspace": new_gdb},
-    validate=True,
-    auto_update_joins_and_relates=True,
-    ignore_case=True
-)
+aprx = arcpy.mp.ArcGISProject(project_path)
+for fc in aprx.folderConnections:
+    fc["folderPath"] = fc["folderPath"].replace(old_dir, new_dir)
+aprx.updateFolderConnections(aprx.folderConnections)
+aprx.save()
 ```
 
 ## 地图系列导出
@@ -281,7 +273,6 @@ if ms and ms.enabled:
 - 导出路径所在目录不存在。
 - 批量 `listLayouts()[0]` 直接取首项，未校验空列表。
 - 替换数据源时路径格式不匹配（`\\` vs `/`）。
-- `updateConnectionProperties` 的字典 key 与实际不匹配（检查 `connectionProperties` 属性先）。
 - 布局元素 `name` 不唯一导致误操作。
 - `MapFrame.camera` 设置后未重新导入视图。
 - 企业级数据库工作空间连接信息包含额外认证字段，更新时需包含完整连接属性。
@@ -314,8 +305,11 @@ def repair_datasources(aprx_path: str, old_gdb: str, new_gdb: str) -> int:
     for m in aprx.listMaps():
         for lyr in m.listLayers():
             if lyr.isBroken:
-                lyr.findAndReplaceWorkspacePath(old_gdb, new_gdb, validate=True)
                 count += 1
+    for db in aprx.databases:
+        if old_gdb in db.get("databasePath", ""):
+            db["databasePath"] = db["databasePath"].replace(old_gdb, new_gdb)
+    aprx.updateDatabases(aprx.databases)
     aprx.save()
     return count
 ```

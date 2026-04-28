@@ -9,15 +9,14 @@
 - `FeatureClassToFeatureClass`
 - `TableToTable`
 - `ExportFeatures`
-- `FeatureToPoint`（`arcpy.management`）
-- `FeatureToLine`（`arcpy.management`）
-- `FeatureToPolygon`（`arcpy.management`）
 - `RasterToPolygon`
 - `PolygonToRaster`
 - `RasterToOtherFormat`
 - `FeatureClassToShapefile`
 - `JSONToFeatures`
 - `FeaturesToJSON`
+
+> `FeatureToPoint` / `FeatureToLine` / `FeatureToPolygon` 属于 `arcpy.management`，详见 [arcpy-management.md](./arcpy-management.md)。
 
 ## 工具 1：`FeatureClassToFeatureClass`
 
@@ -88,57 +87,7 @@ out_table = arcpy.conversion.TableToTable(in_table, out_gdb, "poi_tbl")[0]
 result = arcpy.conversion.ExportFeatures(fc, out_fc, sort_field="NAME A")
 ```
 
-## 工具 4：`FeatureToPoint`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入要素。
-- `out_feature_class`：输出点要素。
-- `point_location`（可选）：`CENTROID` / `INSIDE`。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-### 示例
-
-```python
-result = arcpy.management.FeatureToPoint(in_fc, out_fc, "INSIDE")[0]
-```
-
-## 工具 5：`FeatureToLine`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入要素。
-- `out_feature_class`：输出线要素。
-- `attributes`（可选）：`ATTRIBUTES` / `NO_ATTRIBUTES`。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-### 示例
-
-```python
-arcpy.management.FeatureToLine(boundary_fc, out_line_fc, "ATTRIBUTES")
-```
-
-## 工具 6：`FeatureToPolygon`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入要素。
-- `out_feature_class`：输出面要素。
-- `point_location`（可选）：点定位方式。
-- `join_attributes`（可选）：属性传递策略。
-- `label_features`（可选）：标注要素。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-## 工具 7：`RasterToPolygon`
+## 工具 4：`RasterToPolygon`
 
 ### 参数
 
@@ -162,7 +111,7 @@ result = arcpy.conversion.RasterToPolygon(
 )
 ```
 
-## 工具 8：`PolygonToRaster`
+## 工具 5：`PolygonToRaster`
 
 ### 参数
 
@@ -187,7 +136,7 @@ result = arcpy.conversion.PolygonToRaster(
 )
 ```
 
-## 工具 9：`RasterToOtherFormat`
+## 工具 6：`RasterToOtherFormat`
 
 ### 参数
 
@@ -207,7 +156,7 @@ result = arcpy.conversion.PolygonToRaster(
 arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG")
 ```
 
-## 工具 10：`FeatureClassToShapefile`
+## 工具 7：`FeatureClassToShapefile`
 
 ### 参数
 
@@ -218,7 +167,7 @@ arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG")
 
 - 返回 `arcpy.Result`。
 
-## 工具 11：`JSONToFeatures`
+## 工具 8：`JSONToFeatures`
 
 ### 参数
 
@@ -235,7 +184,7 @@ arcpy.conversion.RasterToOtherFormat(in_raster, out_folder, "JPEG")
 arcpy.conversion.JSONToFeatures(json_path, out_fc)
 ```
 
-## 工具 12：`FeaturesToJSON`
+## 工具 9：`FeaturesToJSON`
 
 ### 参数
 
@@ -263,7 +212,6 @@ arcpy.conversion.FeaturesToJSON(fc, out_json, geoJSON="GEOJSON")
 - `RasterToPolygon` 的 `simplify="SIMPLIFY"` 在边界复杂时可能导致面粘连。
 - `PolygonToRaster` 未设置 `build_rat="BUILD_RAT"` 导致无法进行像元统计查询。
 - JSON/GeoJSON 转换时坐标系未统一导致位置偏移。
-- `FeatureToLine` 建议显式设置 `attributes`，控制属性是否传递到输出线。
 
 ## 最小可运行骨架
 
@@ -271,13 +219,13 @@ arcpy.conversion.FeaturesToJSON(fc, out_json, geoJSON="GEOJSON")
 import arcpy
 
 def convert_and_export(in_fc: str, in_raster: str, out_gdb: str) -> tuple:
-    if not arcpy.management.Exists(out_gdb):
+    if not arcpy.Exists(out_gdb):
         arcpy.management.CreateFileGDB(out_dir, "converted.gdb")
     out_point = f"{out_gdb}/points"
     out_zone = f"{out_gdb}/zones"
     out_raster = f"{out_gdb}/zones_raster"
 
-    arcpy.conversion.FeatureToPoint(in_fc, out_point, "CENTROID")
+    arcpy.management.FeatureToPoint(in_fc, out_point, "CENTROID")
     arcpy.conversion.RasterToPolygon(in_raster, out_zone, "SIMPLIFY")
     arcpy.conversion.PolygonToRaster(out_zone, "ZONE_ID", out_raster, cellsize=30)
 

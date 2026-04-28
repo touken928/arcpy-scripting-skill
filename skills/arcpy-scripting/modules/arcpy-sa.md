@@ -75,6 +75,12 @@
 - `ZonalGeometry`
 - `ZonalHistogram`
 
+### 密度分析
+
+- `KernelDensity`（核密度）
+- `PointDensity`（点密度）
+- `LineDensity`（线密度）
+
 ### 插值
 
 - `Kriging`
@@ -414,6 +420,76 @@ ws = arcpy.sa.Watershed(fdir, pour_points)
 ```python
 krig_model = arcpy.sa.KrigingModelOrdinary("Spherical", 1000, 0.5)
 out_krig = arcpy.sa.Kriging(in_points, "ELEVATION", krig_model, cell_size=30)
+```
+
+## 函数 18：`KernelDensity`
+
+### 参数
+
+- `in_features`：输入点/线要素。
+- `population_field`（可选）：权重字段（默认 `NONE` 即每个要素权重为 1）。
+- `cell_size`（可选）：输出像元大小。
+- `search_radius`（可选）：搜索半径（默认根据输入计算）。
+- `area_unit_scale_factor`（可选）：`SQUARE_MILES` / `SQUARE_KILOMETERS` 等。
+- `out_population_field`（可选）：输出像元中的值类型。
+
+### 返回值
+
+- 返回栅格对象（`Raster`），不是 `arcpy.Result`。
+- 需要通过 `.save(output_path)` 写出结果栅格。
+
+### 示例
+
+```python
+result = arcpy.sa.KernelDensity(
+    crime_points, "WEIGHT",
+    cell_size=30,
+    search_radius=500,
+    area_unit_scale_factor="SQUARE_KILOMETERS"
+)
+result.save(out_density_raster)
+```
+
+## 函数 19：`PointDensity`
+
+### 参数
+
+- `in_features`：输入点要素。
+- `population_field`（可选）：权重字段。
+- `cell_size`（可选）：像元大小。
+- `neighborhood`（可选）：邻域形状（`NbrCircle` 等）。
+- `area_unit_scale_factor`（可选）：面积单位比例因子。
+
+### 返回值
+
+- 返回 `Raster` 对象。
+
+### 示例
+
+```python
+density = arcpy.sa.PointDensity(in_points, "POP", cell_size=30)
+density.save(out_density)
+```
+
+## 函数 20：`LineDensity`
+
+### 参数
+
+- `in_features`：输入线要素。
+- `population_field`（可选）：权重字段。
+- `cell_size`（可选）：像元大小。
+- `search_radius`（可选）：搜索半径。
+- `area_unit_scale_factor`（可选）：面积单位比例因子。
+
+### 返回值
+
+- 返回 `Raster` 对象。
+
+### 示例
+
+```python
+density = arcpy.sa.LineDensity(in_lines, "TRAFFIC", cell_size=30, search_radius=500)
+density.save(out_density)
 ```
 
 ## 邻域对象类（Nbr*）

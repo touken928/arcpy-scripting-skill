@@ -16,12 +16,9 @@
 - `Near`
 - `GenerateNearTable`
 - `PointDistance`
-- `SelectLayerByLocation`
-- `FeatureToLine`
-- `FeatureToPoint`
-- `MultipartToSinglepart`
-- `Dissolve`
 - `Eliminate`
+
+> 选择、融解、要素转换等工具属于 `arcpy.management`，详见 [arcpy-management.md](./arcpy-management.md)。
 
 ## 工具 1：`Buffer`
 
@@ -237,71 +234,16 @@ result = arcpy.analysis.GenerateNearTable(in_fc, near_fc, out_table, search_radi
 
 - 返回 `arcpy.Result`。
 
-## 工具 11：`SelectLayerByLocation`（`arcpy.management`）
+### 语法比对：`arcpy.analysis` vs `arcpy.management`
 
-### 参数
+部分常用工具映射：
+- `SelectLayerByLocation` → `arcpy.management`
+- `Dissolve` → `arcpy.management`
+- `FeatureToPoint` → `arcpy.management`
+- `FeatureToLine` → `arcpy.management`
+- `MultipartToSinglepart` → `arcpy.management`
 
-- `in_layer`：输入图层（需为图层对象，非要素类路径）。
-- `overlap_type`：常用 `INTERSECT` / `WITHIN_A_DISTANCE` / `WITHIN` / `CONTAINS`（不同数据类型可用值存在差异，建议按工具帮助校验）。
-- `select_features`：选择要素。
-- `search_distance`（可选）：搜索距离（用于 `WITHIN_A_DISTANCE`）。
-- `selection_type`：`NEW_SELECTION` / `ADD_TO_SELECTION` / `REMOVE_FROM_SELECTION` / `SUBSET_SELECTION` / `CLEAR_SELECTION`。
-- `invert_clause`（可选）：`INVERT` / `NO_INVERT`。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-### 示例
-
-```python
-lyr = arcpy.management.MakeFeatureLayer(fc, "lyr")[0]
-arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc)
-```
-
-## 工具 12：`Dissolve`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入要素。
-- `out_feature_class`：输出要素。
-- `dissolve_field`（可选）：融合字段（列表或逗号分隔字符串）。
-- `statistics_fields`（可选）：统计字段。
-- `multi_part`（可选）：`MULTI_PART` / `SINGLE_PART`。
-- `unsplit_field`（可选）：不融合字段。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-### 示例
-
-```python
-arcpy.analysis.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fields="AREA SUM")
-```
-
-## 工具 13：`FeatureToPoint`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入要素。
-- `out_feature_class`：输出点要素。
-- `point_location`（可选）：`CENTROID` / `INSIDE`。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
-
-## 工具 14：`MultipartToSinglepart`（`arcpy.management`）
-
-### 参数
-
-- `in_features`：输入多部件要素。
-- `out_feature_class`：输出单部件要素。
-
-### 返回值
-
-- 返回 `arcpy.Result`。
+详见 [arcpy-management.md](./arcpy-management.md)。
 
 ## 常见错误与排查
 
@@ -310,7 +252,6 @@ arcpy.analysis.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fi
 - `Near` 被当作新输出工具，实际默认写回输入数据的字段（如 `NEAR_DIST`）。
 - `Intersect` 输入几何类型差异较大时，输出类型未显式控制导致结果不符合预期。
 - `Erase` 输入与擦除层坐标系不一致，导致结果偏移或空结果。
-- `SelectLayerByLocation` 需要图层对象，直接传要素类路径会报错。
 - 融合字段列表应避免空字符串导致意外融合。
 
 ## 最小可运行骨架
@@ -319,7 +260,8 @@ arcpy.analysis.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fi
 import arcpy
 
 def spatial_analysis(in_fc: str, boundary_fc: str, out_gdb: str) -> str:
-    arcpy.management.CreateFileGDB(out_dir, "analysis.gdb") if not arcpy.management.Exists(f"{out_gdb}") else None
+    if not arcpy.Exists(out_gdb):
+        arcpy.management.CreateFileGDB(out_dir, "analysis.gdb")
     clipped = f"{out_gdb}/clipped"
     buffered = f"{out_gdb}/buffered"
     intersected = f"{out_gdb}/result"

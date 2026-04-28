@@ -16,10 +16,10 @@
 - `NumPyArrayToFeatureClass`
 - `NumPyArrayToTable`
 - `ExtendTable`
-- `ListFields`（`arcpy` 顶层函数）
-- `ListIndexes`（`arcpy` 顶层函数）
 - `Domain`
 - `Version`
+
+> `ListFields` / `ListIndexes` 属于 `arcpy` 顶层函数，详见 [arcpy-functions.md](./arcpy-functions.md)。
 
 ## 对象 1：`SearchCursor`
 
@@ -266,43 +266,6 @@ arcpy.da.NumPyArrayToFeatureClass(data, f"{out_gdb}/points", ["X", "Y"])
 ```python
 arr = arcpy.da.TableToNumPyArray(stats_table, ["ZONE", "MEAN_AREA"])
 arcpy.da.ExtendTable(fc, "ZONE_CODE", arr, "ZONE", just_join=True)
-```
-
-## 函数：`arcpy.ListFields`
-
-### 参数
-
-- `dataset`：数据集路径。
-- `wildcard`（可选）：字段名通配过滤。
-- `field_type`（可选）：`String` / `Integer` / `Double` / `Date` / `Geometry` 等。
-
-### 返回值
-
-- 返回 `Field` 对象列表。
-
-### 示例
-
-```python
-for fld in arcpy.ListFields(fc, field_type="String"):
-    print(f"{fld.name}: {fld.type}, length={fld.length}")
-```
-
-## 函数：`arcpy.ListIndexes`
-
-### 参数
-
-- `table`：表/要素类路径。
-- `wildcard`（可选）：索引名通配。
-
-### 返回值
-
-- 返回 `Index` 对象列表。
-
-### 示例
-
-```python
-for idx in arcpy.ListIndexes(fc):
-    print(f"{idx.name}: fields={idx.fields}, isAscending={idx.isAscending}")
 ```
 
 ## 对象：`Domain` / `Version` / `Editor`

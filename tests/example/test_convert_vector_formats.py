@@ -6,7 +6,7 @@ import pytest
 
 from .conftest import run_example
 
-arcpy = pytest.importorskip("arcpy")
+import arcpy
 
 
 def _make_source_points_gdb(gdb_folder: Path) -> str:

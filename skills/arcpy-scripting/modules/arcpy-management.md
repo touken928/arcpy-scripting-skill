@@ -25,27 +25,16 @@
 - `MakeTableView`
 - `SelectLayerByAttribute`
 - `SelectLayerByLocation`
-- `Intersect`（见 `arcpy.analysis`）
-- `Buffer`（见 `arcpy.analysis`）
+- `Dissolve`
+- `FeatureToPoint`
+- `FeatureToLine`
+- `FeatureToPolygon`
+- `MultipartToSinglepart`
 
-## 工具 1：`Exists`（`arcpy` 顶层函数）
+> `Exists` 属于 `arcpy` 顶层函数，详见 [arcpy-functions.md](./arcpy-functions.md)。
+> `Intersect` / `Buffer` 属于 `arcpy.analysis`，详见 [arcpy-analysis.md](./arcpy-analysis.md)。
 
-### 参数
-
-- `data`：数据集路径或名称。
-
-### 返回值
-
-- 返回 `bool`，`True` 表示存在。
-
-### 示例
-
-```python
-if arcpy.Exists(out_fc):
-    arcpy.Delete(out_fc)
-```
-
-## 工具 2：`CreateFileGDB`
+## 工具 1：`CreateFileGDB`
 
 ### 参数
 
@@ -63,7 +52,7 @@ if arcpy.Exists(out_fc):
 gdb = arcpy.management.CreateFileGDB(out_folder, "work.gdb")[0]
 ```
 
-## 工具 3：`CreateFolder`
+## 工具 2：`CreateFolder`
 
 ### 参数
 
@@ -80,7 +69,7 @@ gdb = arcpy.management.CreateFileGDB(out_folder, "work.gdb")[0]
 folder = arcpy.management.CreateFolder(work_dir, "intermediate")[0]
 ```
 
-## 工具 4：`CreateFeatureclass`
+## 工具 3：`CreateFeatureclass`
 
 ### 参数
 
@@ -103,7 +92,7 @@ result = arcpy.management.CreateFeatureclass(out_gdb, "roads_clean", "POLYLINE",
 new_fc = result[0]
 ```
 
-## 工具 5：`CopyFeatures`
+## 工具 4：`CopyFeatures`
 
 ### 参数
 
@@ -125,7 +114,7 @@ result = arcpy.management.CopyFeatures(in_fc, out_fc)
 copied_fc = result[0]
 ```
 
-## 工具 6：`CopyRaster`
+## 工具 5：`CopyRaster`
 
 ### 参数
 
@@ -149,7 +138,7 @@ copied_fc = result[0]
 out_raster = arcpy.management.CopyRaster(in_raster, out_path)[0]
 ```
 
-## 工具 7：`Append`
+## 工具 6：`Append`
 
 ### 参数
 
@@ -169,7 +158,7 @@ out_raster = arcpy.management.CopyRaster(in_raster, out_path)[0]
 arcpy.management.Append([fc1, fc2], target_fc, "NO_TEST")
 ```
 
-## 工具 8：`Merge`
+## 工具 7：`Merge`
 
 ### 参数
 
@@ -188,7 +177,7 @@ result = arcpy.management.Merge([fc1, fc2, fc3], out_merged)
 merged_fc = result[0]
 ```
 
-## 工具 9：`Rename`
+## 工具 8：`Rename`
 
 ### 参数
 
@@ -205,7 +194,7 @@ merged_fc = result[0]
 arcpy.management.Rename(in_fc, out_fc)
 ```
 
-## 工具 10：`Delete`
+## 工具 9：`Delete`
 
 ### 参数
 
@@ -223,7 +212,7 @@ arcpy.management.Delete(out_fc)
 arcpy.management.Delete("in_memory/temp_layer")
 ```
 
-## 工具 11：`AddField`
+## 工具 10：`AddField`
 
 ### 参数
 
@@ -247,7 +236,7 @@ arcpy.management.AddField(fc, "STATUS", "TEXT", field_length=20, field_is_nullab
 arcpy.management.AddField(fc, "AREA", "DOUBLE", field_alias="面积")
 ```
 
-## 工具 12：`CalculateField`
+## 工具 11：`CalculateField`
 
 ### 参数
 
@@ -282,7 +271,7 @@ def calc_class(area):
 arcpy.management.CalculateField(fc, "CLASS", "calc_class(!AREA!)", "PYTHON3", code)
 ```
 
-## 工具 13：`DeleteField`
+## 工具 12：`DeleteField`
 
 ### 参数
 
@@ -299,7 +288,7 @@ arcpy.management.CalculateField(fc, "CLASS", "calc_class(!AREA!)", "PYTHON3", co
 arcpy.management.DeleteField(fc, ["TMP_A", "TMP_B"])
 ```
 
-## 工具 14：`GetCount`
+## 工具 13：`GetCount`
 
 ### 参数
 
@@ -318,7 +307,7 @@ if count == 0:
     raise ValueError("Feature class is empty")
 ```
 
-## 工具 15：`Project`
+## 工具 14：`Project`
 
 ### 参数
 
@@ -341,7 +330,7 @@ result = arcpy.management.Project(in_fc, out_fc, sr, transform_method="WGS_1984_
 projected_fc = result[0]
 ```
 
-## 工具 16：`MakeFeatureLayer`
+## 工具 15：`MakeFeatureLayer`
 
 ### 参数
 
@@ -361,7 +350,7 @@ projected_fc = result[0]
 lyr = arcpy.management.MakeFeatureLayer(fc, "roads_lyr")[0]
 ```
 
-## 工具 17：`MakeTableView`
+## 工具 16：`MakeTableView`
 
 ### 参数
 
@@ -375,7 +364,7 @@ lyr = arcpy.management.MakeFeatureLayer(fc, "roads_lyr")[0]
 
 - 返回 `arcpy.Result`，`result[0]` 为表视图对象。
 
-## 工具 18：`SelectLayerByAttribute`
+## 工具 17：`SelectLayerByAttribute`
 
 ### 参数
 
@@ -395,7 +384,7 @@ arcpy.management.SelectLayerByAttribute(lyr, "NEW_SELECTION", "ROAD_CLASS = 'A'"
 count = int(arcpy.management.GetCount(lyr)[0])
 ```
 
-## 工具 19：`SelectLayerByLocation`
+## 工具 18：`SelectLayerByLocation`
 
 ### 参数
 
@@ -416,6 +405,88 @@ count = int(arcpy.management.GetCount(lyr)[0])
 arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc, search_distance="100 Meters")
 ```
 
+## 工具 19：`Dissolve`
+
+### 参数
+
+- `in_features`：输入要素。
+- `out_feature_class`：输出要素。
+- `dissolve_field`（可选）：融合字段（列表或逗号分隔字符串）。
+- `statistics_fields`（可选）：统计字段。
+- `multi_part`（可选）：`MULTI_PART` / `SINGLE_PART`。
+- `unsplit_field`（可选）：不融合字段。
+
+### 返回值
+
+- 返回 `arcpy.Result`。
+
+### 示例
+
+```python
+arcpy.management.Dissolve(in_fc, out_fc, dissolve_field="ZONE_CODE", statistics_fields="AREA SUM")
+```
+
+## 工具 20：`FeatureToPoint`
+
+### 参数
+
+- `in_features`：输入要素。
+- `out_feature_class`：输出点要素。
+- `point_location`（可选）：`CENTROID` / `INSIDE`。
+
+### 返回值
+
+- 返回 `arcpy.Result`。
+
+### 示例
+
+```python
+result = arcpy.management.FeatureToPoint(in_fc, out_fc, "INSIDE")[0]
+```
+
+## 工具 21：`FeatureToLine`
+
+### 参数
+
+- `in_features`：输入要素。
+- `out_feature_class`：输出线要素。
+- `attributes`（可选）：`ATTRIBUTES` / `NO_ATTRIBUTES`。
+
+### 返回值
+
+- 返回 `arcpy.Result`。
+
+### 示例
+
+```python
+arcpy.management.FeatureToLine(boundary_fc, out_line_fc, "ATTRIBUTES")
+```
+
+## 工具 22：`FeatureToPolygon`
+
+### 参数
+
+- `in_features`：输入要素。
+- `out_feature_class`：输出面要素。
+- `point_location`（可选）：点定位方式。
+- `join_attributes`（可选）：属性传递策略。
+- `label_features`（可选）：标注要素。
+
+### 返回值
+
+- 返回 `arcpy.Result`。
+
+## 工具 23：`MultipartToSinglepart`
+
+### 参数
+
+- `in_features`：输入多部件要素。
+- `out_feature_class`：输出单部件要素。
+
+### 返回值
+
+- 返回 `arcpy.Result`。
+
 ## 常见错误与排查
 
 - 输出路径写到不存在的工作空间：先 `Exists` 校验父路径。
@@ -426,6 +497,9 @@ arcpy.management.SelectLayerByLocation(lyr, "INTERSECT", buffer_fc, search_dista
 - `Project` 时 transform_method 缺失导致坐标偏移。
 - 企业级数据库编辑未在编辑会话中进行。
 - 字段名包含特殊字符需用 `AddFieldDelimiters` 转义。
+- `SelectLayerByLocation` 需要图层对象，直接传要素类路径会报错。
+- `FeatureToLine` 建议显式设置 `attributes`，控制属性是否传递到输出线。
+- `Dissolve` 融合字段列表应避免空字符串导致意外融合。
 
 ## 最小可运行骨架
 
@@ -434,7 +508,7 @@ import arcpy
 
 def prepare_data(in_fc: str, out_gdb: str) -> str:
     out_fc = f"{out_gdb}/roads_prepared"
-    if arcpy.management.Exists(out_fc):
+    if arcpy.Exists(out_fc):
         arcpy.management.Delete(out_fc)
     arcpy.management.CopyFeatures(in_fc, out_fc)
     arcpy.management.AddField(out_fc, "STATUS", "TEXT", field_length=20)

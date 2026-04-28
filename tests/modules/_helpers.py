@@ -83,4 +83,11 @@ def try_create_temp_aprx(tmp_dir: Path) -> str | None:
                         return str(created)
                 except Exception:
                     continue
+
+    static_empty = Path(__file__).resolve().parent.parent / "static" / "empty" / "empty.aprx"
+    if static_empty.exists():
+        dst = tmp_dir / "empty.aprx"
+        shutil.copy2(str(static_empty), str(dst))
+        return str(dst)
+
     return None

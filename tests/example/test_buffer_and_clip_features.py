@@ -6,7 +6,7 @@ import pytest
 
 from .conftest import run_example
 
-arcpy = pytest.importorskip("arcpy")
+import arcpy
 
 
 def _make_points_and_clip_polygon(gpkg: Path) -> tuple[str, str]:

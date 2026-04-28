@@ -4,7 +4,7 @@ documented in skills/arcpy-scripting/modules/arcpy-da.md"""
 import numpy as np
 import pytest
 
-arcpy = pytest.importorskip("arcpy")
+import arcpy
 
 from _helpers import arcgis_temp_workspace, create_point_fc, new_file_gdb
 

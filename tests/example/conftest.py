@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-arcpy = pytest.importorskip("arcpy")
+import arcpy
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "skills" / "arcpy-scripting" / "examples"

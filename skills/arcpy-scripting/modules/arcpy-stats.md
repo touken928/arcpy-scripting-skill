@@ -129,41 +129,7 @@ for msg in result.getMessages():
 - 返回 `arcpy.Result`。
 - 消息输出：ANN 比率、z-score、p-value、平均观测距离、预期平均距离。
 
-## 工具 5：`KernelDensity`（`arcpy.sa`）
-
-### 参数
-
-- `in_features`：输入点/线要素。
-- `population_field`（可选）：权重字段（默认 `NONE` 即每个要素权重为 1）。
-- `cell_size`（可选）：输出像元大小。
-- `search_radius`（可选）：搜索半径（默认根据输入计算）。
-- `area_unit_scale_factor`（可选）：`SQUARE_MILES` / `SQUARE_KILOMETERS` 等。
-- `out_population_field`（可选）：输出像元中的值类型。
-
-### 返回值
-
-- 返回栅格对象（`Raster`），不是 `arcpy.Result`。
-- 需要通过 `.save(output_path)` 写出结果栅格。
-
-### 示例
-
-```python
-result = arcpy.sa.KernelDensity(
-    crime_points, "WEIGHT",
-    cell_size=30,
-    search_radius=500,
-    area_unit_scale_factor="SQUARE_KILOMETERS"
-)
-result.save(out_density_raster)
-```
-
-## 工具 6：`PointDensity` / `LineDensity`（`arcpy.sa`）
-
-### 参数
-
-- 与 `KernelDensity` 类似（专属点/线密度）。
-
-## 工具 8：`OrdinaryLeastSquares`（OLS 回归）
+## 工具 5：`OrdinaryLeastSquares`（OLS 回归）
 
 ### 参数
 
@@ -180,7 +146,7 @@ result.save(out_density_raster)
 - 返回 `arcpy.Result`。
 - 输出要素包含残差字段，可结合 `ClustersOutliers` 分析残差聚集。
 - 系数表包含各解释变量的系数、标准误、t-stat、p-val、VIF 等。
-- 注意：OLS 对字段类型、样本规模和数据分布要求较高，测试环境中常需按数据条件调整或跳过。
+- 注意：OLS 对字段类型、样本规模和数据分布要求较高，小样本可能因数据条件不足而失败。
 
 ### 示例
 
@@ -195,7 +161,7 @@ result = arcpy.stats.OrdinaryLeastSquares(
 print(result.getMessages())
 ```
 
-## 工具 9：`GeographicallyWeightedRegression`（GWR）
+## 工具 6：`GeographicallyWeightedRegression`（GWR）
 
 ### 参数
 
@@ -212,13 +178,13 @@ print(result.getMessages())
 
 - 返回 `arcpy.Result`。
 - 输出属性包含局部 R²、残差等。
-- 注意：GWR 对数据规模与空间分布较敏感，小样本或简化测试数据常不稳定。
+- 注意：GWR 对数据规模与空间分布较敏感，小样本运行时可能因数据条件不足而失败。
 
-## 工具 10：`ExploratoryRegression`（探索回归）
+## 工具 7：`ExploratoryRegression`（探索回归）
 
 当前版本推荐用 `ExploratoryRegression` 进行趋势与变量组合探索。
 
-## 工具 12：`GroupingAnalysis`（分组分析）
+## 工具 8：`GroupingAnalysis`（分组分析）
 
 ### 参数
 
@@ -233,9 +199,9 @@ print(result.getMessages())
 
 - 返回 `arcpy.Result`。
 - 输出要素包含 `SSQ`、`SC_Label` 等字段。
-- 注意：`GroupingAnalysis` 的参数契约在不同 ArcGIS 版本/本地化环境下可能存在差异。
+- 注意：`GroupingAnalysis` 的参数契约在不同 ArcGIS 版本/本地化环境下可能存在差异，运行时需根据实际版本调整参数。
 
-## 工具 13：`MultivariateClustering`（多变量聚类）
+## 工具 9：`MultivariateClustering`（多变量聚类）
 
 ### 参数
 
@@ -247,7 +213,7 @@ print(result.getMessages())
 - 返回 `arcpy.Result`。
 - 注意：`MultivariateClustering` 在部分版本需额外指定聚类方法（如 `K_MEANS` / `K_MEDOIDS`）。
 
-## 工具 14：`ExportXYv`（ASCII/CSV 导出）
+## 工具 10：`ExportXYv`（ASCII/CSV 导出）
 
 ### 参数
 
