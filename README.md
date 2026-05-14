@@ -21,23 +21,15 @@
 
 当前只维护高频模块；中频与低频模块暂不提供。
 
-## 在 Cursor 中使用
+## 添加 Skill
 
-将 `skills/arcpy-scripting/` 放入项目级或用户级 skills 目录：
+通过 npx 从 GitHub 仓库直接安装：
 
-- 项目级（推荐）：`<your-project>/.cursor/skills/arcpy-scripting/`
-- 用户级：`~/.cursor/skills/arcpy-scripting/`（Windows 常见为 `C:\Users\<you>\.cursor\skills\arcpy-scripting\`）
-
-最小结构：
-
-```text
-.cursor/skills/arcpy-scripting/
-├── SKILL.md
-├── modules/
-└── examples/
+```bash
+npx skills touken928/arcpy-scripting-skill
 ```
 
-使用时，模型应优先读取 `SKILL.md`；仅当需要核对具体 ArcPy 工具、参数、返回值或模块归属时，再读取 `modules/` 下的对应文件。
+该命令将 Skill 材料下载至本地 skills 路径。使用时，模型应优先读取 `SKILL.md`；仅当需要核对具体 ArcPy 工具、参数、返回值或模块归属时，再读取 `modules/` 下的对应文件。
 
 ## 运行环境
 
